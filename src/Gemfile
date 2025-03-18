@@ -1,0 +1,18 @@
+source 'https://rubygems.org'
+ruby File.read(File.dirname(__FILE__)+'/.ruby-version').strip
+
+gem 'async-io'
+gem 'falcon'
+
+# gem 'rack', '~> 2.2.8'
+# gem 'rackup', '~> 2.1'
+gem 'rack'
+gem 'rackup'
+
+gem 'opentelemetry-sdk'
+gem 'opentelemetry-exporter-otlp'
+gem 'opentelemetry-instrumentation-all'
+
+group :development do
+  gem 'rubocop'
+end
