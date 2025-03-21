@@ -3,6 +3,10 @@ ruby File.read(File.dirname(__FILE__)+'/.ruby-version').strip
 
 gem 'async-io'
 gem 'falcon'
+gem 'sinatra'
+gem 'sinatra-reloader'
+gem 'slim'
+gem 'sass'
 
 # gem 'rack', '~> 2.2.8'
 # gem 'rackup', '~> 2.1'
