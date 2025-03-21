@@ -21,7 +21,7 @@ __END__
         - stack_ls = `docker stack ls --format '{{json .}}'`.lines.map { JSON.parse _1 }
         - stack_ls.each do |s|
           li : a href="/?stack=#{s['Name']}" #{s['Name']}  (#{s['Services']})
-      pre = `docker service ls`
+      pre = `docker ps`
     - else
       - services = `docker service ls --filter label=com.docker.stack.namespace=#{params[:stack]} --format '{{json .}}'`.lines.map { JSON.parse _1 }
       ul
