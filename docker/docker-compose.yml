@@ -1,5 +1,5 @@
 services:
-  registry_listener:
+  stack_insight:
     image: ${REGISTRY_HOST}/stack-insight
     build:
       context: ../src
