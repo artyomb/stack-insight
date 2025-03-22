@@ -4,9 +4,9 @@ require 'json'
 require 'sinatra/reloader'
 # set :inline_templates, true
 
-get '/', &-> { slim :index }
-get '/logs/', &-> { slim :logs }
-get '/inspect/', &-> { slim :inspect }
+get '*/logs/', &-> { slim :logs }
+get '*/inspect/', &-> { slim :inspect }
+get '*/', &-> { slim :index }
 
 run Sinatra::Application
 
