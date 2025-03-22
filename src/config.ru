@@ -5,6 +5,8 @@ require 'sinatra/reloader'
 # set :inline_templates, true
 
 get '/', &-> { slim :index }
+get '/logs/', &-> { slim :logs }
+get '/inspect/', &-> { slim :inspect }
 
 run Sinatra::Application
 
@@ -33,3 +35,10 @@ __END__
             a.action href="logs/?stack=#{params[:stack]}&service=#{s['ID']}" logs
             a.action href="update/?stack=#{params[:stack]}&service=#{s['ID']}" update
 
+@@logs
+  h1 Logs: #{params[:service]}
+  pre = `docker service logs -n 100 #{params[:service]}`
+
+@@inspect
+  h1 Inspect: #{params[:service]}
+  pre = `docker service inspect #{params[:service]}`
