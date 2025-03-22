@@ -8,7 +8,7 @@ RUN echo 'gem: --no-document' >> ~/.gemrc
 
 WORKDIR /app
 
-COPY .ruby-version Gemfile* /app/
+COPY Gemfile* /app/
 
 RUN bundle install --jobs $(nproc) --retry=3
 
