@@ -46,7 +46,7 @@ __END__
 @@logs
   h1 Service Logs: #{params[:service]}
   / - logs = `docker service logs -n 100 --raw -t #{params[:service]}`
-  - logs = `docker service logs #{params[:service]} 2>&1`
+  - logs = `docker service logs -n 100 #{params[:service]} 2>&1`
   pre == logs
 
 @@inspect
