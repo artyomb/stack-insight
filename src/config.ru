@@ -58,7 +58,7 @@ __END__
   h2 Docker service inspect
   pre = `docker service inspect #{params[:service]} 2>&1`
 
-@update
+@@update
   h1 Update Service: #{params[:service]}
   / h2 Docker pull image
   / pre = `docker service update --detach --force #{params[:service]} 2>&1 | grep -vE '\[.*=>.*\]'`
