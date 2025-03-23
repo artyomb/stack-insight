@@ -52,7 +52,11 @@ __END__
 @@inspect
   h1 Service Inspect: #{params[:service]}
   h2 Docker ps
-  pre = `docker ps --no-trunc 2>&1 | grep #{params[:service]}`.gsub /\s+/, ' '
+  - ps = `docker ps --no-trunc 2>&1 | grep #{params[:service]}`.gsub /\s+/, ' '
+  pre = ps
+  h2 Docker inspect
+  - c_id = ps.split(' ')[-1]
+  pre = `docker inspect #{c_id} 2>&1`
   h2 Docker service ps
   pre = `docker service ps --no-trunc #{params[:service]} 2>&1`
   h2 Docker service inspect
