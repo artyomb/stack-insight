@@ -7,6 +7,7 @@ require 'sinatra/reloader'
 get '*/stack*', &-> { slim :stack }
 get '*/logs*', &-> { slim :logs }
 get '*/inspect*', &-> { slim :inspect }
+get '*/update*', &-> { slim :update }
 get '*', &-> { slim :index }
 
 run Sinatra::Application
@@ -56,3 +57,11 @@ __END__
   pre = `docker service ps --no-trunc #{params[:service]} 2>&1`
   h2 Docker service inspect
   pre = `docker service inspect #{params[:service]} 2>&1`
+
+@update
+  h1 Update Service: #{params[:service]}
+  / h2 Docker pull image
+  / pre = `docker service update --detach --force #{params[:service]} 2>&1 | grep -vE '\[.*=>.*\]'`
+  h2 Docker service update
+  pre = `docker service update --force #{params[:service]} 2>&1 | grep -vE '\[.*=>.*\]'`
+
