@@ -7,8 +7,7 @@ require 'sinatra/reloader'
 get '*/stack*', &-> { slim :stack }
 get '*/logs*', &-> { slim :logs }
 get '*/inspect*', &-> { slim :inspect }
-get '*/', &-> { slim :index }
-get '*', &-> { redirect "#{params[:splat].first}/" }
+get '*', &-> { slim :index }
 
 run Sinatra::Application
 
@@ -20,8 +19,8 @@ __END__
       color: white
     .action
       margin-left: 1em
-  pre = params.to_json
-  pre = env.to_json
+  javascript:
+      if (!location.href.endsWith('/')) { location.href = location.href + '/'; }
   == yield
 
 @@index
