@@ -20,7 +20,7 @@ __END__
     .action
       margin-left: 1em
   javascript:
-      if (!location.href.endsWith('/')) { location.href = location.href + '/'; }
+      if (!location.href.includes('?') && !location.href.endsWith('/')) { location.href = location.href + '/'; }
   == yield
 
 @@index
