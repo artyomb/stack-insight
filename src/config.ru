@@ -51,10 +51,10 @@ __END__
 
 @@inspect
   h1 Service Inspect: #{params[:service]}
-  h2 Docker ps
+  h2 Docker ps (current Node)
   - ps = `docker ps --no-trunc 2>&1 | grep #{params[:service]}`.gsub /\s+/, ' '
   pre = ps
-  h2 Docker inspect
+  h2 Docker inspect (current Node)
   - c_id = ps.split(' ')[-1]
   pre = `docker inspect #{c_id} 2>&1`
   h2 Docker service ps
@@ -64,8 +64,15 @@ __END__
 
 @@update
   h1 Update Service: #{params[:service]}
-  / h2 Docker pull image
-  / pre = `docker service update --detach --force #{params[:service]} 2>&1 | grep -vE '\[.*=>.*\]'`
+  - image =`docker service inspect #{params[:service]} --format '{{.Spec.TaskTemplate.ContainerSpec.Image}}'`
+  - image = image.gsub(/@sha256:.*/, '')
+  h2 Docker pull image: #{image}
+  pre = `docker pull #{image} 2>&1 | grep -vE '\[.*=>.*\]'`
   h2 Docker service update
   pre = `docker service update --force #{params[:service]} 2>&1 | grep -vE '\[.*=>.*\]'`
+  h2 Docker ps (current Node)
+  - ps = `docker ps --no-trunc 2>&1 | grep #{params[:service]}`.gsub /\s+/, ' '
+  pre = ps
+  h2 Docker service ps
+  pre = `docker service ps --no-trunc #{params[:service]} 2>&1`
 
