@@ -20,7 +20,9 @@ __END__
       color: white
     .action
       margin-left: 1em
-  ==yield
+  pre = params.to_json
+  pre = env.to_json
+  == yield
 
 @@index
   h1 Stack Insight: #{params[:stack]}
