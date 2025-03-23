@@ -26,27 +26,33 @@ __END__
 @@index
   h1 Stack Insight: #{params[:stack]}
   pre: ul
-    - stack_ls = `docker stack ls --format '{{json .}}'`.lines.map { JSON.parse _1 }
+    - stack_ls = `docker stack ls --format '{{json .}}' 2>&1`.lines.map { JSON.parse _1 }
     - stack_ls.each do |s|
       li : a href="stack?stack=#{s['Name']}" #{s['Name']}  (#{s['Services']})
-  pre = `docker ps`
+  pre = `docker ps 2>&1`
 
 @@stack
   h1 Stack: #{params[:stack]}
   pre: ul
-    - services = `docker service ls --filter label=com.docker.stack.namespace=#{params[:stack]} --format '{{json .}}'`.lines.map { JSON.parse _1 }
+    - services = `docker service ls --filter label=com.docker.stack.namespace=#{params[:stack]} --format '{{json .}}' 2>&1`.lines.map { JSON.parse _1 }
     - services.each do |s|
       li
         span #{s['Name']} (#{s['Mode']} #{s['Replicas']})
-        a.action href="inspect/?stack=#{params[:stack]}&service=#{s['ID']}" inspect
-        a.action href="logs/?stack=#{params[:stack]}&service=#{s['ID']}" logs
-        a.action href="update/?stack=#{params[:stack]}&service=#{s['ID']}" update
+        a.action href="inspect/?stack=#{params[:stack]}&service=#{s['Name']}" inspect
+        a.action href="logs/?stack=#{params[:stack]}&service=#{s['Name']}" logs
+        a.action href="update/?stack=#{params[:stack]}&service=#{s['Name']}" update
 
 @@logs
-  h1 Logs: #{params[:service]}
-  // --raw
-  pre = `docker service logs -n 100 --raw -t #{params[:service]}`
+  h1 Service Logs: #{params[:service]}
+  / - logs = `docker service logs -n 100 --raw -t #{params[:service]}`
+  - logs = `docker service logs #{params[:service]} 2>&1`
+  pre == logs
 
 @@inspect
-  h1 Inspect: #{params[:service]}
-  pre = `docker service inspect #{params[:service]}`
+  h1 Service Inspect: #{params[:service]}
+  h2 Docker ps
+  pre = `docker ps --no-trunc 2>&1 | grep #{params[:service]}`.gsub /\s+/, ' '
+  h2 Docker service ps
+  pre = `docker service ps --no-trunc #{params[:service]} 2>&1`
+  h2 Docker service inspect
+  pre = `docker service inspect #{params[:service]} 2>&1`
