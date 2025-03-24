@@ -6,8 +6,6 @@ pre: ul
 
 ruby:
   columns = %w[ID Command Image Names Status]
-  ps = `docker ps --no-trunc --format '{{json .}}' 2>&1`
-  puts "ps: #{ps}"
   ps = `docker ps --no-trunc --format '{{json .}}' 2>&1`.lines.map { JSON.parse _1 }
   ps.each {
     _1['ID'] = _1['ID'][0..12]
