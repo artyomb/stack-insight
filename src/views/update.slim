@@ -4,7 +4,7 @@ h1 Update Service: #{params[:service]}
 h2 Docker pull image: #{image}
 pre = `docker pull #{image} 2>&1 | grep -vE '\[.*=>.*\]'`
 h2 Docker service update
-pre = `docker service update --force #{params[:service]} --image #{image} 2>&1 | grep -vE '\[.*=>.*\]'`
+pre = `docker service update --with-registry-auth --force #{params[:service]} --image #{image} 2>&1 | grep -vE '\[.*=>.*\]'`
 h2 Docker ps (current Node)
 - ps = `docker ps --no-trunc 2>&1 | grep #{params[:service]}`.gsub /\s+/, ' '
 pre = ps

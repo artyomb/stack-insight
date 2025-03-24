@@ -4,19 +4,19 @@ pre: ul
   - stack_ls.each do |s|
     li : a href="stack?stack=#{s['Name']}" #{s['Name']}  (#{s['Services']})
 
-  - ps = `docker ps --no-trunc --format json 2>&1`.lines.map { JSON.parse _1 }
-  - columns= %w[ID Command Image Names Status]
-  ruby:
-    ps.each {
-      _1['ID'] = _1['ID'][0..12]
-      _1['Image'] = _1['Image'].gsub(/@sha256:.*/, &->(s) { "<span class='sha256'>#{s}</span>" })
-    }
-  / make td no warp and limit width
+ruby:
+  columns = %w[ID Command Image Names Status]
+  ps = `docker ps --no-trunc --format json 2>&1`.lines.map { JSON.parse _1 }
+  puts "ps: #{ps}"
+  ps.each {
+    _1['ID'] = _1['ID'][0..12]
+    _1['Image'] = _1['Image'].gsub(/@sha256:.*/, &->(s) { "<span class='sha256'>#{s}</span>" })
+  }
 
-  table
-    - columns.each do |k|
-      th = k
-    - ps.each do |p|
-      tr
-        - columns.each do |c|
-          td == p[c]
+table
+  - columns.each do |k|
+    th = k
+  - ps.each do |p|
+    tr
+      - columns.each do |c|
+        td == p[c]
