@@ -1,7 +1,7 @@
 FROM ruby:3.3.1-slim-bookworm AS base
 
 RUN apt update && apt --fix-missing install -y build-essential pkg-config bash curl libpq-dev openssh-client \
-     libpq-dev libsqlite3-dev libssl-dev libgeos-dev docker.io \
+     libpq-dev libsqlite3-dev libssl-dev libgeos-dev docker.io jq\
      && rm -rf /var/lib/apt/lists/*
 
 RUN echo 'gem: --no-document' >> ~/.gemrc
@@ -14,7 +14,7 @@ RUN bundle install --jobs $(nproc) --retry=3
 
 FROM ruby:3.3.1-slim-bookworm AS deploy
 RUN apt update && apt install --fix-missing -y bash curl libpq-dev openssh-client \
-      libpq-dev sqlite3 libssl-dev libgeos-dev docker.io \
+      libpq-dev sqlite3 libssl-dev libgeos-dev docker.io jq\
      && rm -rf /var/lib/apt/lists/*
 
 COPY --from=base /usr/local/bundle /usr/local/bundle
