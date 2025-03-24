@@ -32,7 +32,7 @@ pre: table
       td
         a.action href="inspect/?service=#{s['Name']}" inspect
         a.action href="logs/?service=#{s['Name']}" logs
-        a.action href="update/?service=#{s['Name']}" update
+        a.action href="update/?service=#{s['Name']}" onclick="return confirm('Are you sure to Pull and Update?')" update
 
 h2 Docker ps
 pre: table
