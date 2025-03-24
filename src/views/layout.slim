@@ -1,0 +1,23 @@
+sass:
+  body1
+    background-color: black
+    color: white
+  .action
+    margin-left: 1em
+  .sha256
+    opacity: 0.5
+    margin-left: 0.3em
+  table
+    width: 100%
+    td, th
+      text-align: left
+      white-space: nowrap
+      max-width: 18vw
+      overflow: hidden
+      text-overflow: ellipsis
+      //word-wrap: break-word
+      //word-break: break-all
+
+javascript:
+  if (!location.href.includes('?') && !location.href.endsWith('/')) { location.href = location.href + '/'; }
+== yield
