@@ -1,10 +1,10 @@
 h1 Stack Insight: #{params[:stack]}
 pre: ul
-  - stack_ls = JSON "[#{`docker stack ls --format '{{json .}}' 2>&1`}]"
+  - stack_ls = `docker stack ls --format '{{json .}}' 2>&1`.lines.map { JSON.parse _1 }
   - stack_ls.each do |s|
     li : a href="stack?stack=#{s['Name']}" #{s['Name']}  (#{s['Services']})
 
-  - ps = JSON "[#{`docker ps --no-trunc --format json 2>&1`}]"
+  - ps = `docker ps --no-trunc --format json 2>&1`.lines.map { JSON.parse _1 }
   - columns= %w[ID Command Image Names Status]
   ruby:
     ps.each {
