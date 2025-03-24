@@ -1,9 +1,17 @@
 h1 Stack: #{params[:stack]}
-pre: ul
-  - services = `docker service ls --filter label=com.docker.stack.namespace=#{params[:stack]} --format '{{json .}}' 2>&1`.lines.map { JSON.parse _1 }
+- services = `docker service ls --filter label=com.docker.stack.namespace=#{params[:stack]} --format '{{json .}}' 2>&1`.lines.map { JSON.parse _1 }
+- columns = services[0].keys
+
+pre: table
+  - columns.each do |k|
+    th = k
+  th Actions
   - services.each do |s|
-    li
-      span #{s['Name']} (#{s['Mode']} #{s['Replicas']})
-      a.action href="inspect/?stack=#{params[:stack]}&service=#{s['Name']}" inspect
-      a.action href="logs/?stack=#{params[:stack]}&service=#{s['Name']}" logs
-      a.action href="update/?stack=#{params[:stack]}&service=#{s['Name']}" update
+    tr
+      - columns.each do |c|
+        td == s[c]
+      td
+        a.action href="inspect/?stack=#{params[:stack]}&service=#{s['Name']}" inspect
+        a.action href="logs/?stack=#{params[:stack]}&service=#{s['Name']}" logs
+        a.action href="update/?stack=#{params[:stack]}&service=#{s['Name']}" update
+
