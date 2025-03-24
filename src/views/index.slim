@@ -6,14 +6,15 @@ pre: ul
 
 ruby:
   columns = %w[ID Command Image Names Status]
-  ps = `docker ps --no-trunc --format json 2>&1`.lines.map { JSON.parse _1 }
+  ps = `docker ps --no-trunc --format json 2>&1`
   puts "ps: #{ps}"
+  ps = `docker ps --no-trunc --format json 2>&1`.lines.map { JSON.parse _1 }
   ps.each {
     _1['ID'] = _1['ID'][0..12]
     _1['Image'] = _1['Image'].gsub(/@sha256:.*/, &->(s) { "<span class='sha256'>#{s}</span>" })
   }
 
-table
+pre: table
   - columns.each do |k|
     th = k
   - ps.each do |p|
