@@ -14,9 +14,12 @@ ruby:
   }
 
 h2 Docker stack ls
-- scolumns = %w[NameT Image Mode Replicas]
-- services = JSON `docker service ls --filter label=com.docker.stack.namespace=#{params[:stack]} --format '{{json . }}' | jq -s . 2>&1`
+- sps = JSON `docker stack ls --format '{{.Name}}' | xargs -I{} sh -c 'docker stack ps {} --no-trunc --format "{{json .}}" | jq --arg stack "{}" '. + {Stack: $stack}''  | jq -s . 2>&1`
+- sps = sps.group_by { _1['Name'] }
+- scolumns = %w[NameT Image Mode Replicas CurrentState]
+- services = JSON `docker service ls --format '{{json . }}' | jq -s . 2>&1`
 - services.each { _1['NameT'] = _1['Name'].gsub(/^[^_]+_/, &->(s) { "<span class='stack_name'>#{s}</span>" }) }
+- services.each { _1['CurrentState'] = sps[_1['Name']+'.1']&.first['CurrentState'] rescue 'n/a' }
 
 pre: table
   - scolumns.each do |k|

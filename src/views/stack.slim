@@ -1,11 +1,11 @@
 h1 Stack: #{params[:stack]}
-- ps = JSON `docker stack ps --no-trunc weather --format '{{json . }}' | jq -s . 2>&1`
-- ps = ps.group_by { _1['Name'] }
+- sps = JSON `docker stack ls --format '{{.Name}}' | xargs -I{} sh -c 'docker stack ps {} --no-trunc --format "{{json .}}" | jq --arg stack "{}" '. + {Stack: $stack}''  | jq -s . 2>&1`
+- sps = sps.group_by { _1['Name'] }
 - services = JSON `docker service ls --filter label=com.docker.stack.namespace=#{params[:stack]} --format '{{json . }}' | jq -s . 2>&1`
 / - services = JSON `docker service inspect $(docker service ls -q --filter label=com.docker.stack.namespace=#{params[:stack]}) 2>&1`
-- columns = services[0].keys
-- columns = %w[NameT Image Mode Replicas]
+- columns = %w[NameT Image Mode Replicas CurrentState]
 - services.each { _1['NameT'] = _1['Name'].gsub(/^#{params[:stack]}_/, &->(s) { "<span class='stack_name'>#{s}</span>" }) }
+- services.each { _1['CurrentState'] = sps[_1['Name']+'.1']&.first['CurrentState'] rescue 'n/a' }
 
 pre: table
   - columns.each do |k|
