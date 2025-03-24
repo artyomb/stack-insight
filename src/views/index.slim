@@ -10,8 +10,28 @@ ruby:
   ps.each {
     _1['ID'] = _1['ID'][0..12]
     _1['Image'] = _1['Image'].gsub(/@sha256:.*/, &->(s) { "<span class='sha256'>#{s}</span>" })
+    _1['Names'] = _1['Names'].gsub(/\.\d+\..*/, &->(s) { "<span class='container_name'>#{s}</span>" })
   }
 
+h2 Docker stack ls
+- scolumns = %w[NameT Image Mode Replicas]
+- services = JSON `docker service ls --filter label=com.docker.stack.namespace=#{params[:stack]} --format '{{json . }}' | jq -s . 2>&1`
+- services.each { _1['NameT'] = _1['Name'].gsub(/^[^_]+_/, &->(s) { "<span class='stack_name'>#{s}</span>" }) }
+
+pre: table
+  - scolumns.each do |k|
+    th = k
+  th Actions
+  - services.each do |s|
+    tr
+      - scolumns.each do |c|
+        td == s[c]
+      td
+        a.action href="inspect/?service=#{s['Name']}" inspect
+        a.action href="logs/?service=#{s['Name']}" logs
+        a.action href="update/?service=#{s['Name']}" update
+
+h2 Docker ps
 pre: table
   - columns.each do |k|
     th = k

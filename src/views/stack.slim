@@ -1,6 +1,11 @@
 h1 Stack: #{params[:stack]}
-- services = `docker service ls --filter label=com.docker.stack.namespace=#{params[:stack]} --format '{{json .}}' 2>&1`.lines.map { JSON.parse _1 }
+- ps = JSON `docker stack ps --no-trunc weather --format '{{json . }}' | jq -s . 2>&1`
+- ps = ps.group_by { _1['Name'] }
+- services = JSON `docker service ls --filter label=com.docker.stack.namespace=#{params[:stack]} --format '{{json . }}' | jq -s . 2>&1`
+/ - services = JSON `docker service inspect $(docker service ls -q --filter label=com.docker.stack.namespace=#{params[:stack]}) 2>&1`
 - columns = services[0].keys
+- columns = %w[NameT Image Mode Replicas]
+- services.each { _1['NameT'] = _1['Name'].gsub(/^#{params[:stack]}_/, &->(s) { "<span class='stack_name'>#{s}</span>" }) }
 
 pre: table
   - columns.each do |k|
@@ -11,7 +16,7 @@ pre: table
       - columns.each do |c|
         td == s[c]
       td
-        a.action href="inspect/?stack=#{params[:stack]}&service=#{s['Name']}" inspect
-        a.action href="logs/?stack=#{params[:stack]}&service=#{s['Name']}" logs
-        a.action href="update/?stack=#{params[:stack]}&service=#{s['Name']}" update
+        a.action href="inspect/?service=#{s['Name']}" inspect
+        a.action href="logs/?service=#{s['Name']}" logs
+        a.action href="update/?service=#{s['Name']}" update
 
