@@ -45,7 +45,7 @@ html
     javascript:
       if (!location.href.includes('?') && !location.href.endsWith('/')) { location.href = location.href + '/'; }
 
-      const BASE_PATH = window.location.pathname.match(/(.*insight)/)?.[1] || '/insight';
+      const BASE_PATH = window.location.pathname.match(/(.*insight)/)?.[1] || '';
       document.querySelector('a.home-link').href = BASE_PATH + '/';
 
     == yield
