@@ -12,6 +12,8 @@ ruby:
     s['NameT'] = s['Name'].gsub(/^#{params[:stack]}_/, &->(s) { "<span class='stack_name'>#{s}</span>" })
 
     svc = sps[s['Name'] + '.1']&.first
+    next unless svc
+
     s['CurrentState'] = svc['CurrentState'] rescue 'n/a'
     con = s['Container'] = ps[svc['ID']] rescue 'n/a' # First replica, running task container
     s['Image'] += "<span class='sha256'>@" + con['Image'][0..15] + "</span>" if con
