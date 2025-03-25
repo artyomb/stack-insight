@@ -15,7 +15,7 @@ ruby:
     s['CurrentState'] = svc['CurrentState'] rescue 'n/a'
     con = s['Container'] = ps[svc['ID']] rescue 'n/a' # First replica, running task container
     s['Image'] += "<span class='sha256'>@" + con['Image'][0..15] + "</span>" if con
-    s['Image Created'] = con.dig 'Config', 'Labels', 'org.opencontainers.image.created'
+    s['Image Created'] = con&.dig 'Config', 'Labels', 'org.opencontainers.image.created' if con
     # com.gitlab.ci.pipelineurl
   }
 
