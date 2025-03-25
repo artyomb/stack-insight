@@ -1,25 +1,32 @@
-h1 Stack Insight: #{params[:stack]}
-pre: ul
-  - stack_ls = `docker stack ls --format '{{json .}}' 2>&1`.lines.map { JSON.parse _1 }
-  - stack_ls.each do |s|
-    li : a href="stack?stack=#{s['Name']}" #{s['Name']}  (#{s['Services']})
-
 ruby:
+  sps = Async { JSON `docker stack ls --format '{{.Name}}' | xargs -I{} sh -c 'docker stack ps {} --no-trunc --format "{{json .}}" | jq --arg stack "{}" '. + {Stack: $stack}''  | jq -s . 2>&1`  }
+  stack_ls = Async { JSON `docker stack ls --format '{{json .}}' | jq -s . 2>&1` }
+  ps = Async{ JSON `docker ps --no-trunc --format '{{json .}}' | jq -s . 2>&1` }
+  services = Async { JSON `docker service ls --format '{{json . }}' | jq -s . 2>&1` }
+
   columns = %w[ID Command Image Names Status]
-  ps = `docker ps --no-trunc --format '{{json .}}' 2>&1`.lines.map { JSON.parse _1 }
+
+  stack_ls = stack_ls.wait
+  sps = sps.wait.group_by { _1['Name'] }
+
+  services = services.wait
+  services.each { _1['NameT'] = _1['Name'].gsub(/^[^_]+_/, &->(s) { "<span class='stack_name'>#{s}</span>" }) }
+  services.each { _1['CurrentState'] = sps[_1['Name'] + '.1']&.first['CurrentState'] rescue 'n/a' }
+
+  ps = ps.wait
   ps.each {
     _1['ID'] = _1['ID'][0..12]
     _1['Image'] = _1['Image'].gsub(/@sha256:.*/, &->(s) { "<span class='sha256'>#{s}</span>" })
     _1['Names'] = _1['Names'].gsub(/\.\d+\..*/, &->(s) { "<span class='container_name'>#{s}</span>" })
   }
 
+h1 Stack Insight: #{params[:stack]}
+pre: ul
+  - stack_ls.each do |s|
+    li : a href="stack?stack=#{s['Name']}" #{s['Name']}  (#{s['Services']})
+
 h2 Docker stack ls
-- sps = JSON `docker stack ls --format '{{.Name}}' | xargs -I{} sh -c 'docker stack ps {} --no-trunc --format "{{json .}}" | jq --arg stack "{}" '. + {Stack: $stack}''  | jq -s . 2>&1`
-- sps = sps.group_by { _1['Name'] }
 - scolumns = %w[NameT Image Mode Replicas CurrentState]
-- services = JSON `docker service ls --format '{{json . }}' | jq -s . 2>&1`
-- services.each { _1['NameT'] = _1['Name'].gsub(/^[^_]+_/, &->(s) { "<span class='stack_name'>#{s}</span>" }) }
-- services.each { _1['CurrentState'] = sps[_1['Name']+'.1']&.first['CurrentState'] rescue 'n/a' }
 
 pre: table
   - scolumns.each do |k|

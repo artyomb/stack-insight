@@ -156,6 +156,7 @@ PLATFORMS
 DEPENDENCIES
   async-io
   falcon
+  parallel
   rack
   rackup
   rubocop
@@ -163,9 +164,6 @@ DEPENDENCIES
   sinatra
   sinatra-reloader
   slim
-
-RUBY VERSION
-   ruby 3.3.1p55
 
 BUNDLED WITH
    2.5.17
