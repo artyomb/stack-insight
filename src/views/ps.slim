@@ -1,0 +1,17 @@
+ruby:
+  tasks =JSON `docker service ps --no-trunc #{params[:service]} --format '{{json .}}' | jq -s . 2>&1`
+  columns = %w[ID Name Node Image Ports DesiredState CurrentState Error]
+  #columns = tasks.first.keys
+
+h1 Docker service ps:  #{params[:service]}
+pre: table
+  - columns.each do |k|
+    th = k
+  th Actions
+  - tasks.each do |t|
+    tr
+      - columns.each do |c|
+        td == t[c]
+
+
+
