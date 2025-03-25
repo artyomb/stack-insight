@@ -40,7 +40,7 @@ html
 
   body
     nav style="display: flex; justify-content: space-between; padding: 1em;"
-      a href=(request.path_info[/(.*insight)/, 1] + '/') #Home
+      a href=(request.path_info[/(.*insight)/, 1].to_s + '/') #Home
     javascript:
       if (!location.href.includes('?') && !location.href.endsWith('/')) { location.href = location.href + '/'; }
 
