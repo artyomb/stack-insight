@@ -2,13 +2,16 @@ ruby:
   ps = Async { JSON `docker ps --filter "label=com.docker.stack.namespace=#{params[:stack]}" --format '{{.ID}}' | xargs docker inspect 2>&1` }
   sps = Async { JSON `docker stack ps #{params[:stack]} --no-trunc --format "{{json .}}" | jq --arg stack "{}" '. + {Stack: $stack}' | jq -s . 2>&1` }
   services = Async { JSON `docker service ls --filter label=com.docker.stack.namespace=#{params[:stack]} --format '{{json . }}' | jq -s . 2>&1` }
+  services_i = Async { JSON `docker stack services #{params[:stack]} --format '{{.Name}}' | xargs -I{} docker service inspect {} --format '{{json . }}' | jq -s . 2>&1` }
 
   ps = ps.wait.group_by { _1.dig 'Config', 'Labels', 'com.docker.swarm.task.id' }.transform_values(&:first)
   sps = sps.wait.group_by { _1['Name'] }
   services = services.wait
+  services_i = services_i.wait.group_by { _1['Spec']['Name'] }.transform_values(&:first)
   # services = JSON `docker service inspect $(docker service ls -q --filter label=com.docker.stack.namespace=#{params[:stack]}) 2>&1`
-  columns = %w[NameT Image Image\ Created Mode Replicas CurrentState]
+  columns = %w[NameT Image Image\ Created Mode Replicas Restart\ Condition CurrentState]
   services.each { |s|
+    spec = services_i[s['Name']]['Spec']
     s['NameT'] = s['Name'].gsub(/^#{params[:stack]}_/, &->(s) { "<span class='stack_name'>#{s}</span>" })
 
     svc = sps[s['Name'] + '.1']&.first
@@ -18,6 +21,8 @@ ruby:
     con = s['Container'] = ps[svc['ID']] rescue 'n/a' # First replica, running task container
     s['Image'] += "<span class='sha256'>@" + con['Image'][0..15] + "</span>" if con
     s['Image Created'] = con&.dig 'Config', 'Labels', 'org.opencontainers.image.created' if con
+    s['Restart Condition'] = spec.dig 'TaskTemplate', 'RestartPolicy', 'Condition'
+    #s['Networks'] = con.dig('NetworkSettings', 'Networks').keys.join(', ') if con
     # com.gitlab.ci.pipelineurl
   }
 
