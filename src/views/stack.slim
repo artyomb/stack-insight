@@ -9,6 +9,7 @@ ruby:
   services = services.wait
   services_i = services_i.wait.group_by { _1['Spec']['Name'] }.transform_values(&:first)
   # services = JSON `docker service inspect $(docker service ls -q --filter label=com.docker.stack.namespace=#{params[:stack]}) 2>&1`
+
   columns = %w[NameT Image Image\ Created Version Mode Replicas Restart\ Condition CurrentState]
   services.each { |s|
     spec = services_i[s['Name']]['Spec']
