@@ -1,13 +1,19 @@
 h1 Update Service: #{params[:service]}
 - image =`docker service inspect #{params[:service]} --format '{{.Spec.TaskTemplate.ContainerSpec.Image}}'`
 - image = image.gsub(/@sha256:.*/, '')
-h2 Docker pull image: #{image}
-pre = `docker pull #{image} 2>&1 | grep -vE '\[.*=>.*\]'`
-h2 Docker service update
-pre = `docker service update --with-registry-auth --force #{params[:service]} --image #{image} 2>&1 | grep -vE '\[.*=>.*\]'`
-h2 Docker ps (current Node)
-- ps = `docker ps --no-trunc 2>&1 | grep #{params[:service]}`.gsub /\s+/, ' '
-pre = ps
-h2 Docker service ps
-pre = `docker service ps --no-trunc #{params[:service]} 2>&1`
 
+h2 Docker pull image: #{image}
+- pull = `docker pull #{image} 2>&1 | grep -vE '\[.*=>.*\]'`
+pre = pull
+
+- if pull =~ /Image is up to date /
+  h2 Image is up to date
+
+- if pull =~ /Downloaded newer image/
+  h2 New image found, update service
+  pre = `docker service update --with-registry-auth --force #{params[:service]} --image #{image} 2>&1 | grep -vE '\[.*=>.*\]'`
+  h2 Docker ps (current Node)
+  - ps = `docker ps --no-trunc 2>&1 | grep #{params[:service]}`.gsub /\s+/, ' '
+  pre = ps
+  h2 Docker service ps
+  pre = `docker service ps --no-trunc #{params[:service]} 2>&1`

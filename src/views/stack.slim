@@ -9,7 +9,7 @@ ruby:
   services = services.wait
   services_i = services_i.wait.group_by { _1['Spec']['Name'] }.transform_values(&:first)
   # services = JSON `docker service inspect $(docker service ls -q --filter label=com.docker.stack.namespace=#{params[:stack]}) 2>&1`
-  columns = %w[NameT Image Image\ Created Mode Replicas Restart\ Condition CurrentState]
+  columns = %w[NameT Image Image\ Created Version Mode Replicas Restart\ Condition CurrentState]
   services.each { |s|
     spec = services_i[s['Name']]['Spec']
     s['NameT'] = s['Name'].gsub(/^#{params[:stack]}_/, &->(s) { "<span class='stack_name'>#{s}</span>" })
@@ -19,8 +19,14 @@ ruby:
 
     s['CurrentState'] = svc['CurrentState'] rescue 'n/a'
     con = s['Container'] = ps[svc['ID']] rescue 'n/a' # First replica, running task container
-    s['Image'] += "<span class='sha256'>@" + con['Image'][0..15] + "</span>" if con
-    s['Image Created'] = con&.dig 'Config', 'Labels', 'org.opencontainers.image.created' if con
+    if con
+      s['Image'] += "<span class='sha256'>@" + con['Image'][0..15] + "</span>"
+      s['Image Created'] = con&.dig 'Config', 'Labels', 'org.opencontainers.image.created'
+
+      s['Version'] = con&.dig('Config', 'Labels', 'org.opencontainers.image.version') ||
+                     con&.dig('Config', 'Labels', 'org.label-schema.schema-version')
+
+    end
     s['Restart Condition'] = spec.dig 'TaskTemplate', 'RestartPolicy', 'Condition'
     #s['Networks'] = con.dig('NetworkSettings', 'Networks').keys.join(', ') if con
     # com.gitlab.ci.pipelineurl
@@ -40,5 +46,5 @@ pre: table
         a.action href="ps/?service=#{s['Name']}" ps
         a.action href="inspect/?service=#{s['Name']}" inspect
         a.action href="logs/?service=#{s['Name']}" logs
-        a.action href="update/?service=#{s['Name']}" onclick="return confirm('Are you sure to Pull and Update?')" update
+        a.action href="update/?service=#{s['Name']}" onclick="return confirm('Are you sure to Pull and Update \n#{s['Name']}?')" update
 

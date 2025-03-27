@@ -9,7 +9,7 @@ html
         background-color: black
         color: white
       .action
-        margin-left: 1em
+        margin-right: 1em
       .sha256, .stack_name, .container_name
         opacity: 0.5
         margin-left: 0.3em
@@ -37,10 +37,13 @@ html
             text-decoration: none
             &:hover
               text-decoration: underline
+          .time
+
 
   body
     nav style="display: flex; justify-content: space-between; padding: 1em;"
       a.home-link href="#" #Home
+      .time = Time.now
 
     javascript:
       if (!location.href.includes('?') && !location.href.endsWith('/')) { location.href = location.href + '/'; }
