@@ -1,0 +1,105 @@
+javascript:
+  /**
+   * Converts ANSI-colored text to HTML with CSS styles
+   * @param {string} text - Input text with ANSI escape codes
+   * @param {object} options - Conversion options
+   * @param {boolean} options.inline - Use inline styles (default: true)
+   * @param {boolean} options.escapeHtml - Escape HTML tags (default: true)
+   * @returns {string} HTML-formatted text
+   */
+  function ansiToHtml(text, options = {}) {
+    const defaults = {
+      inline: true,
+      escapeHtml: true,
+      colors: {
+        // Standard 4-bit colors
+        30: 'black', 31: 'red', 32: 'green', 33: 'yellow',
+        34: 'blue', 35: 'magenta', 36: 'cyan', 37: 'white',
+        39: 'inherit',     // Default foreground
+        90: 'darkgray', 91: 'lightred', 92: 'lightgreen', 93: 'lightyellow',
+        94: 'lightblue', 95: 'lightmagenta', 96: 'lightcyan', 97: 'brightwhite',
+
+        // Background colors
+        40: 'black', 41: 'red', 42: 'green', 43: 'yellow',
+        44: 'blue', 45: 'magenta', 46: 'cyan', 47: 'white',
+        49: 'inherit',     // Default background
+      },
+      styles: {
+        1: 'font-weight:bold', 2: 'opacity:0.7',       // Dim/Faint
+        3: 'font-style:italic', 4: 'text-decoration:underline',
+        7: 'filter:invert(1)', 9: 'text-decoration:line-through',
+      }
+    };
+
+    const config = {...defaults, ...options};
+
+    // HTML escaping (optional)
+    if (config.escapeHtml) {
+      text = text.replace(/[&<>]/g, m => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;'
+      }[m]));
+    }
+
+    // Process ANSI codes
+    let openTags = [];
+    let currentStyles = {};
+
+    return text.replace(
+      /\x1b\[([\d;]*)m/g,
+      (_, codes) => {
+        if (!codes) codes = '0'; // Reset if no codes
+
+        const parts = codes.split(';');
+        let newStyles = {};
+        let output = '';
+
+        // Close all tags for reset (code 0)
+        if (parts.includes('0')) {
+          output = openTags.reverse().map(t => `</span>`).join('');
+          openTags = [];
+          currentStyles = {};
+        }
+
+        // Process each code
+        parts.forEach(code => {
+          code = parseInt(code, 10);
+
+          // Handle colors
+          if (config.colors[code]) {
+            const type = code < 40 ? 'color' : 'background-color';
+            newStyles[type] = config.colors[code];
+          }
+
+          // Handle 8-bit (256) colors
+          else if (code === 38 || code === 48) {
+            // Implementation for 256-color codes would go here
+          }
+
+          // Handle styles
+          else if (config.styles[code]) {
+            const [prop, value] = config.styles[code].split(':');
+            newStyles[prop] = value;
+          }
+        });
+
+        // Generate new span if styles changed
+        if (Object.keys(newStyles).length > 0) {
+          currentStyles = {...currentStyles, ...newStyles};
+          const styleStr = Object.entries(currentStyles)
+            .map(([k, v]) => `${k}:${v}`)
+            .join(';');
+
+          output += `<span${config.inline ? ` style="${styleStr}"` : ''}>`;
+          openTags.push('span');
+        }
+
+        return output;
+      }
+    ) + openTags.reverse().map(t => `</span>`).join('');
+  }
+
+  // Example usage:
+  // const coloredText = "[1;31mERROR[0m: [32mSUCCESS[0m with [4;33mWARNING[0m";
+  // console.log(ansiToHtml(coloredText));
