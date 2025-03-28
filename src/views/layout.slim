@@ -38,12 +38,17 @@ html
             &:hover
               text-decoration: underline
           .time
+          .version
+            margin-right: 4em
+
 
 
   body
     nav style="display: flex; justify-content: space-between; padding: 1em;"
       a.home-link href="#" #Home
-      .time = Time.now
+      .right
+        span.version = "v" + (ENV['ORG_OPENCONTAINERS_IMAGE_VERSION'] || '<local run>')
+        span = Time.now
 
     javascript:
       if (!location.href.includes('?') && !location.href.endsWith('/')) { location.href = location.href + '/'; }
