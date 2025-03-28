@@ -28,7 +28,7 @@ pre = pull
 
 - if pull =~ /Downloaded newer image/ || container_is_outdated
   h2 Update service
-  pre = `docker service update --with-registry-auth --force #{params[:service]} --image "#{image}@#{image_digest}" 2>&1 | grep -vE '\[.*=>.*\]'`
+  pre = `docker service update --with-registry-auth --force #{params[:service]} --image "#{image}@#{image_digest}" --no-resolve-image 2>&1 | grep -vE '\[.*=>.*\]'`
   h2 Docker ps (current Node)
   - ps = `docker ps --no-trunc 2>&1 | grep #{params[:service]}`.gsub /\s+/, ' '
   pre = ps
