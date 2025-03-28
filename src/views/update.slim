@@ -4,12 +4,12 @@
 h1 Update Service: #{params[:service]}
 - image =`docker service inspect #{params[:service]} --format '{{.Spec.TaskTemplate.ContainerSpec.Image}}'`
 - image = image.gsub(/@sha256:.*/, '').strip
-- ps = Async { JSON `docker ps --filter "label=com.docker.swarm.service.name=#{params[:service]}" --format '{{.ID}}' | xargs docker inspect 2>&1` }
-- ps = ps.wait
+- ps = Async { JSON `docker ps --filter "label=com.docker.swarm.service.name=#{params[:service]}" --format '{{.ID}}' | xargs -r docker inspect 2>&1 | jq -s` }
+- ps = ps.wait.first
 - container_is_outdated = false
 
 h2 Docker pull image: #{image}
-- pull = `docker pull #{image} 2>&1 | grep -vE '\[.*=>.*\]' | tee`
+- pull = `docker pull #{image} 2>&1 | tee`
 - image_digest = pull[/Digest: (sha256:.{64})/, 1]
 
 pre = pull

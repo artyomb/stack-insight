@@ -1,10 +1,10 @@
 ruby:
-  ps = Async { JSON `docker ps --filter "label=com.docker.stack.namespace=#{params[:stack]}" --format '{{.ID}}' | xargs docker inspect 2>&1` }
+  ps = Async { JSON `docker ps --filter "label=com.docker.stack.namespace=#{params[:stack]}" --format '{{.ID}}' | xargs -r docker inspect 2>&1 | jq -s ` }
   sps = Async { JSON `docker stack ps #{params[:stack]} --no-trunc --format "{{json .}}" | jq --arg stack "{}" '. + {Stack: $stack}' | jq -s . 2>&1` }
   services = Async { JSON `docker service ls --filter label=com.docker.stack.namespace=#{params[:stack]} --format '{{json . }}' | jq -s . 2>&1` }
-  services_i = Async { JSON `docker stack services #{params[:stack]} --format '{{.Name}}' | xargs -I{} docker service inspect {} --format '{{json . }}' | jq -s . 2>&1` }
+  services_i = Async { JSON `docker stack services #{params[:stack]} --format '{{.Name}}' | xargs -r -I{} docker service inspect {} --format '{{json . }}' | jq -s . 2>&1` }
 
-  ps = ps.wait.group_by { _1.dig 'Config', 'Labels', 'com.docker.swarm.task.id' }.transform_values(&:first)
+  ps = ps.wait.first.group_by { _1.dig 'Config', 'Labels', 'com.docker.swarm.task.id' }.transform_values(&:first)
   sps = sps.wait.group_by { _1['Name'] }
   services = services.wait
   services_i = services_i.wait.group_by { _1['Spec']['Name'] }.transform_values(&:first)
