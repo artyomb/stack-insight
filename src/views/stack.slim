@@ -21,11 +21,12 @@ ruby:
     s['CurrentState'] = svc['CurrentState'] rescue 'n/a'
     con = s['Container'] = ps[svc['ID']] rescue 'n/a' # First replica, running task container
     if con
-      s['Image'] += "<span class='sha256'>@" + con['Image'][0..15] + "</span>"
-      s['Image Created'] = con&.dig 'Config', 'Labels', 'org.opencontainers.image.created'
+      c_digest = JSON(`docker image inspect #{con['Image']}`)[0]['RepoDigests'][0][/sha256:.{64}/]
+      s['Image'] += "<span class='sha256'>@" + c_digest[0..15] + "...</span>"
+      s['Image Created'] = con.dig 'Config', 'Labels', 'org.opencontainers.image.created'
 
-      s['Version'] = con&.dig('Config', 'Labels', 'org.opencontainers.image.version') ||
-                     con&.dig('Config', 'Labels', 'org.label-schema.schema-version')
+      s['Version'] = con.dig('Config', 'Labels', 'org.opencontainers.image.version') ||
+                     con.dig('Config', 'Labels', 'org.label-schema.schema-version')
 
     end
     s['Restart Condition'] = spec.dig 'TaskTemplate', 'RestartPolicy', 'Condition'
