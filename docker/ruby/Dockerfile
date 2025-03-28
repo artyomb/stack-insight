@@ -10,7 +10,8 @@ WORKDIR /app
 
 COPY Gemfile* /app/
 
-RUN bundle install --jobs $(nproc) --retry=3
+RUN bundle install --jobs $(nproc) --retry=3 && \
+    bundle clean --force && rm -rf /usr/local/bundle/cache/*
 
 FROM ruby:3.3.1-slim-bookworm AS deploy
 RUN apt update && apt install --fix-missing -y bash curl libpq-dev openssh-client \
