@@ -22,6 +22,12 @@ ruby:
     con = s['Container'] = ps[svc['ID']] rescue 'n/a' # First replica, running task container
     if con
       c_digest = JSON(`docker image inspect #{con['Image']}`)[0]['RepoDigests'][0][/sha256:.{64}/]
+
+      #docker_image_full_name_with_subdir_name = _1['Image']
+      #cut_domain = docker_image_full_name_with_subdir_name[/^(?:[^\/]*\.)?[^\/]+\/(.+)$/, 2]
+      s['TitleImage'] = s['Image']
+      s['Image'] = s['Image'][/^(?:(?<domain>[^\/]+\.[^\/]+(?::\d+)?)[\/])?(?<name>.+)$/,2] || ''
+
       s['Image'] += "<span class='sha256'>@" + c_digest[0..15] + "...</span>"
       s['Image Created'] = con.dig 'Config', 'Labels', 'org.opencontainers.image.created'
 
@@ -43,7 +49,7 @@ pre: table
   - services.each do |s|
     tr
       - columns.each do |c|
-        td == s[c]
+        td title=s["Title#{c}"] == s[c]
       td
         a.action href="ps/?service=#{s['Name']}" ps
         a.action href="inspect/?service=#{s['Name']}" inspect
