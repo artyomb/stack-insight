@@ -49,10 +49,54 @@ pre: table
   - services.each do |s|
     tr
       - columns.each do |c|
-        td title=s["Title#{c}"] == s[c]
+        td class=c.downcase title=s["Title#{c}"] == s[c]
       td
         a.action href="ps/?service=#{s['Name']}" ps
         a.action href="inspect/?service=#{s['Name']}" inspect
         a.action href="logs/?service=#{s['Name']}" logs
         a.action href="update/?service=#{s['Name']}" onclick="return confirm('Are you sure to Pull and Update \n#{s['Name']}?')" update
 
+sass:
+  .time
+    span
+      margin-left: 1em
+    .old
+      opacity: 0.4
+    .recent
+      background: #fffa4f
+
+javascript:
+  const list = document.querySelectorAll('.created');
+  list.forEach(function(e) {
+    if (!e.innerText) return;
+
+    const t = new Date(e.innerText);
+    const now = new Date();
+    const diffSeconds = Math.floor((now - t) / 1000);
+
+    e.innerText = t.toLocaleString('en-US', {
+      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+    });
+    e.classList.add('time');
+
+    const timeUnits = [ [86400, 'd'], [3600, 'h'], [60, 'm'], [1, 's'] ];
+
+    let remaining = diffSeconds;
+    const ago = timeUnits.reduce((acc, [sec, unit]) => {
+      const val = Math.floor(remaining / sec);
+      remaining %= sec;
+      if (val === 0) return acc;
+      if (sec === 60 && diffSeconds >= 86400) return acc;
+      if (sec === 1 && diffSeconds >= 86400) return acc;
+      return acc + val + unit + ' ';
+    }, '').trim();
+
+    let ago_span = e.appendChild(document.createElement('span'));
+
+    if (diffSeconds < 86400)
+      ago_span.classList.add('recent');
+    else
+      ago_span.classList.add('old');
+
+    ago_span.innerText = `(${ago} ago)`;
+  });
