@@ -10,7 +10,7 @@ ruby:
   services_i = services_i.wait.group_by { _1['Spec']['Name'] }.transform_values(&:first)
   # services = JSON `docker service inspect $(docker service ls -q --filter label=com.docker.stack.namespace=#{params[:stack]}) 2>&1`
 
-  columns = %w[NameT Image Image\ Created Version Mode Replicas Restart\ Condition CurrentState]
+  columns = %w[NameT Image Image\ Created Version Commit Replicas Restart\ Condition CurrentState]
   services.each { |s|
     si = services_i[s['Name']]
     spec = si['Spec']
@@ -35,6 +35,8 @@ ruby:
       s['CurrentState'] = svc['Error']
     end
 
+    s['Replicas'] += ' g' if s['Mode'] == 'global'
+
     con = s['Container'] = ps[svc['ID']] rescue 'n/a' # First replica, running task container
     if con
       c_digest = JSON(`docker image inspect #{con['Image']}`)[0]['RepoDigests'][0][/sha256:.{64}/]
@@ -54,6 +56,10 @@ ruby:
       s['Version'] = con.dig('Config', 'Labels', 'org.opencontainers.image.version') ||
                      con.dig('Config', 'Labels', 'org.label-schema.schema-version')
 
+      s['LinkVersion'] = con.dig('Config', 'Labels', 'com.gitlab.ci.pipelineurl')
+
+      s['Commit'] = con.dig('Config', 'Labels', 'com.gitlab.ci.commit_message')
+
     end
     s['Restart Condition'] = spec.dig 'TaskTemplate', 'RestartPolicy', 'Condition'
     #s['Networks'] = con.dig('NetworkSettings', 'Networks').keys.join(', ') if con
@@ -69,7 +75,11 @@ pre: table
   - services.each do |s|
     tr class=s['Klass']
       - columns.each do |c|
-        td class=c.downcase title=s["Title#{c}"] == s[c]
+        td class=c.downcase title=s["Title#{c}"]
+          -if s["Link#{c}"]
+            a href=s["Link#{c}"] == s[c]
+          - else
+            == s[c]
       td
         a.action href="ps/?service=#{s['Name']}" ps
         a.action href="inspect/?service=#{s['Name']}" inspect
@@ -77,6 +87,12 @@ pre: table
         a.action href="update/?service=#{s['Name']}" onclick="return confirm('Are you sure to Pull and Update \n#{s['Name']}?')" update
 
 sass:
+  a
+    color: #2e54b9
+    text-decoration: none
+    &:hover
+      text-decoration: underline
+
   tr.new
     background: rgba(116, 255, 31, 0.15)
   tr.error

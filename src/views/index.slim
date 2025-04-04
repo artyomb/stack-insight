@@ -10,8 +10,13 @@ ruby:
   sps = sps.wait.group_by { _1['Name'] }
 
   services = services.wait
-  services.each { _1['NameT'] = _1['Name'].gsub(/^[^_]+_/, &->(s) { "<span class='stack_name'>#{s}</span>" }) }
-  services.each { _1['CurrentState'] = sps[_1['Name'] + '.1']&.first['CurrentState'] rescue 'n/a' }
+  services.each {
+    _1['NameT'] = _1['Name'].gsub(/^[^_]+_/, &->(s) { "<span class='stack_name'>#{s}</span>" })
+    _1['CurrentState'] = sps[_1['Name'] + '.1']&.first['CurrentState'] rescue 'n/a'
+    _1['Replicas'] += ' g' if _1['Mode'] == 'global'
+    _1['TitleImage'] = _1['Image']
+    _1['Image'] = _1['Image'][/^(?:(?<domain>[^\/]+\.[^\/]+(?::\d+)?)[\/])?(?<name>.+)$/,2] || ''
+  }
 
   ps = ps.wait
   ps.each {
@@ -26,7 +31,7 @@ pre: ul
     li : a href="stack?stack=#{s['Name']}" #{s['Name']}  (#{s['Services']})
 
 h2 Docker stack ls
-- scolumns = %w[NameT Image Mode Replicas CurrentState]
+- scolumns = %w[NameT Image Replicas CurrentState]
 
 pre: table
   - scolumns.each do |k|
@@ -35,7 +40,7 @@ pre: table
   - services.each do |s|
     tr
       - scolumns.each do |c|
-        td == s[c]
+        td title=s["Title#{c}"] == s[c]
       td
         a.action href="ps/?service=#{s['Name']}" ps
         a.action href="inspect/?service=#{s['Name']}" inspect
