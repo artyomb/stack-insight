@@ -12,16 +12,36 @@ ruby:
 
   columns = %w[NameT Image Image\ Created Version Mode Replicas Restart\ Condition CurrentState]
   services.each { |s|
-    spec = services_i[s['Name']]['Spec']
+    si = services_i[s['Name']]
+    spec = si['Spec']
     s['NameT'] = s['Name'].gsub(/^#{params[:stack]}_/, &->(s) { "<span class='stack_name'>#{s}</span>" })
 
     svc = sps[s['Name'] + '.1']&.first
+    svc_prev = sps[s['Name'] + '.1']&.at(1)
     next unless svc
 
     s['CurrentState'] = svc['CurrentState'] rescue 'n/a'
+
+    unless !svc_prev || svc_prev['Error'].empty?
+      c,r = s['Replicas'].split('/')
+      if c != r
+        s['Klass'] = 'error_prev'
+        s['CurrentState'] += ' > ' + svc_prev['Error']
+      end
+    end
+
+    unless svc['Error']&.empty?
+      s['Klass'] = 'error'
+      s['CurrentState'] = svc['Error']
+    end
+
     con = s['Container'] = ps[svc['ID']] rescue 'n/a' # First replica, running task container
     if con
       c_digest = JSON(`docker image inspect #{con['Image']}`)[0]['RepoDigests'][0][/sha256:.{64}/]
+      created = Time.parse con['Created']
+      if ( Time.now.utc - created.utc < 60*60*6) && s['Klass'].nil?
+        s['Klass'] = 'new'
+      end
 
       #docker_image_full_name_with_subdir_name = _1['Image']
       #cut_domain = docker_image_full_name_with_subdir_name[/^(?:[^\/]*\.)?[^\/]+\/(.+)$/, 2]
@@ -47,7 +67,7 @@ pre: table
     th = k
   th Actions
   - services.each do |s|
-    tr
+    tr class=s['Klass']
       - columns.each do |c|
         td class=c.downcase title=s["Title#{c}"] == s[c]
       td
@@ -57,6 +77,12 @@ pre: table
         a.action href="update/?service=#{s['Name']}" onclick="return confirm('Are you sure to Pull and Update \n#{s['Name']}?')" update
 
 sass:
+  tr.new
+    background: rgba(116, 255, 31, 0.15)
+  tr.error
+    background: rgba(255, 0, 0, 0.15)
+  tr.error_prev
+    background: rgba(255, 0, 0, 0.07)
   .time
     span
       margin-left: 1em
