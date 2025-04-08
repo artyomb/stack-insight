@@ -1,5 +1,5 @@
 ruby:
-  ps = Async { JSON `docker ps --filter "label=com.docker.stack.namespace=#{params[:stack]}" --format '{{.ID}}' | xargs -r docker inspect 2>&1 | jq -s ` }
+  ps = Async { JSON `docker ps --filter "label=com.docker.stack.namespace=#{params[:stack]}" --format '{{.ID}}' | xargs -r docker inspect -s 2>&1 | jq -s ` }
   sps = Async { JSON `docker stack ps #{params[:stack]} --no-trunc --format "{{json .}}" | jq --arg stack "{}" '. + {Stack: $stack}' | jq -s . 2>&1` }
   services = Async { JSON `docker service ls --filter label=com.docker.stack.namespace=#{params[:stack]} --format '{{json . }}' | jq -s . 2>&1` }
   services_i = Async { JSON `docker stack services #{params[:stack]} --format '{{.Name}}' | xargs -r -I{} docker service inspect {} --format '{{json . }}' | jq -s . 2>&1` }
@@ -10,7 +10,20 @@ ruby:
   services_i = services_i.wait.group_by { _1['Spec']['Name'] }.transform_values(&:first)
   # services = JSON `docker service inspect $(docker service ls -q --filter label=com.docker.stack.namespace=#{params[:stack]}) 2>&1`
 
-  columns = %w[NameT Image Image\ Created Version Commit Replicas Restart\ Condition CurrentState]
+  number_to_human_size = ->(i) {
+    units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+    size = i.to_f
+    unit = 0
+
+    while size > 1024 && unit < units.length - 1
+      size /= 1024
+      unit += 1
+    end
+
+    "#{format('%.2f', size).sub(/\.?0+$/, '')} #{units[unit]}"
+  }
+
+  columns = %w[NameT Image Image\ Created Version Commit Replicas Container\ Size Restart\ Condition CurrentState]
   services.each { |s|
     si = services_i[s['Name']]
     spec = si['Spec']
@@ -64,6 +77,10 @@ ruby:
     s['Restart Condition'] = spec.dig 'TaskTemplate', 'RestartPolicy', 'Condition'
     #s['Networks'] = con.dig('NetworkSettings', 'Networks').keys.join(', ') if con
     # com.gitlab.ci.pipelineurl
+    s['Container Size'] = con.dig('SizeRw') # "SizeRw": 16828757,    "SizeRootFs" : 328033441,
+    # convert to human readable
+    # undefined method `human_size' for an instance of Integer
+    s['Container Size'] = number_to_human_size.call s['Container Size']
   }
 
 h1 Stack: #{params[:stack]}
