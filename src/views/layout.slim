@@ -47,7 +47,9 @@ html
     - dinfo = JSON `docker info --format "{{json .}}"`
     nav style="display: flex; justify-content: space-between; padding: 1em;"
       a.home-link href="#" #Home
-      .name #{dinfo['Name']} (#{dinfo['OperatingSystem']})
+      .name
+        |  #{dinfo['Name']} (#{dinfo['OperatingSystem']})
+        |  #{dinfo['NCPU']}:CPU, #{dinfo['MemTotal'].to_i / (1024*1024*1024) }:RAM, #{dinfo.dig('Swarm', 'Nodes')}:Nodes
       .right
         span.version = "v" + (ENV['ORG_OPENCONTAINERS_IMAGE_VERSION'] || '<local run>')
         span = Time.now

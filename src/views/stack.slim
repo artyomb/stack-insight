@@ -73,14 +73,15 @@ ruby:
 
       s['Commit'] = con.dig('Config', 'Labels', 'com.gitlab.ci.commit_message')
 
+      s['Container Size'] = con.dig('SizeRw') # "SizeRw": 16828757,    "SizeRootFs" : 328033441,
+      # convert to human readable
+      # undefined method `human_size' for an instance of Integer
+      s['Container Size'] = number_to_human_size.call s['Container Size']
     end
+
     s['Restart Condition'] = spec.dig 'TaskTemplate', 'RestartPolicy', 'Condition'
     #s['Networks'] = con.dig('NetworkSettings', 'Networks').keys.join(', ') if con
     # com.gitlab.ci.pipelineurl
-    s['Container Size'] = con.dig('SizeRw') # "SizeRw": 16828757,    "SizeRootFs" : 328033441,
-    # convert to human readable
-    # undefined method `human_size' for an instance of Integer
-    s['Container Size'] = number_to_human_size.call s['Container Size']
   }
 
 h1 Stack: #{params[:stack]}
