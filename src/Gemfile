@@ -4,6 +4,7 @@ gem 'async-io'
 gem 'falcon'
 gem 'sinatra'
 gem 'sinatra-reloader'
+gem 'async-websocket'
 gem 'slim'
 gem 'sass'
 

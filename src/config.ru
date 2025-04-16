@@ -2,8 +2,34 @@
 require 'sinatra'
 require 'json'
 require 'sinatra/reloader'
+require 'async/websocket/adapters/rack'
+require 'open3'
 
 get '*/stack*', &-> { slim :stack }
+
+get '*/logs_ws*', &-> {
+  if Async::WebSocket::Adapters::Rack.websocket?(env)
+    Async::WebSocket::Adapters::Rack.open(env) do |connection|
+      thread = Thread.new do
+        Open3.popen3("docker service logs -n 10 -f #{params[:service]} 2>&1") do |stdin, stdout, stderr, wait_thr|
+          while line = stdout.gets
+            break if connection.closed?
+            connection.write(line)
+            connection.flush
+          end
+        end
+      end
+
+      while connection.read; end
+    rescue => e
+      puts e.inspect
+    ensure
+      thread&.kill
+    end
+  else
+    slim :logs_ws
+  end
+}
 get '*/logs*', &-> { slim :logs }
 get '*/inspect*', &-> { slim :inspect }
 get '*/ps*', &-> { slim :ps }

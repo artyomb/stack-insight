@@ -1,0 +1,22 @@
+h1 Service Logs: #{params[:service]}
+#logs
+
+javascript:
+  window.onload = function (){
+      let el = document.getElementById('logs');
+      let show = (msg) => {
+        let line = document.createElement('div');
+        line.className = 'line';
+        line.textContent = msg;
+        el.appendChild(line);
+        if (el.children.length > 30) {
+          el.removeChild(el.firstChild);
+        }
+      };
+
+      let ws = new WebSocket('ws://' + window.location.host + window.location.pathname + '?service=' + '#{params[:service]}');
+      ws.onopen =  () => show('--websocket opened--');
+      ws.onclose = () => show('--websocket closed--');
+      ws.onmessage = (m) => show(m.data);
+  }
+
