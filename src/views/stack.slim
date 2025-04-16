@@ -3,6 +3,7 @@ ruby:
   sps = Async { JSON `docker stack ps #{params[:stack]} --no-trunc --format "{{json .}}" | jq --arg stack "{}" '. + {Stack: $stack}' | jq -s . 2>&1` }
   services = Async { JSON `docker service ls --filter label=com.docker.stack.namespace=#{params[:stack]} --format '{{json . }}' | jq -s . 2>&1` }
   services_i = Async { JSON `docker stack services #{params[:stack]} --format '{{.Name}}' | xargs -r -I{} docker service inspect {} --format '{{json . }}' | jq -s . 2>&1` }
+  description = Async { `docker config inspect --format '{{json .Spec.Data}}' #{params[:stack]}_readme | jq -r . | base64 -d`.strip }
 
   ps = ps.wait.first&.group_by { _1.dig 'Config', 'Labels', 'com.docker.swarm.task.id' }&.transform_values(&:first) || {}
   sps = sps.wait.group_by { _1['Name'] }
@@ -85,6 +86,7 @@ ruby:
   }
 
 h1 Stack: #{params[:stack]}
+pre.description = description.wait
 
 pre: table
   - columns.each do |k|

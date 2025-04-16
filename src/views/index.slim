@@ -30,7 +30,7 @@ pre: ul
   - stack_ls.each do |s|
     li : a href="stack?stack=#{s['Name']}" #{s['Name']}  (#{s['Services']})
 
-h2 Docker stack ls
+h2 Docker service ls
 - scolumns = %w[NameT Image Replicas CurrentState]
 
 pre: table
