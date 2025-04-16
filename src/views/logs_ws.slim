@@ -14,7 +14,8 @@ javascript:
         }
       };
 
-      let ws = new WebSocket('ws://' + window.location.host + window.location.pathname + '?service=' + '#{params[:service]}');
+      let protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+      let ws = new WebSocket(protocol + window.location.host + window.location.pathname + '?service=' + '#{params[:service]}');
       ws.onopen =  () => show('--websocket opened--');
       ws.onclose = () => show('--websocket closed--');
       ws.onmessage = (m) => show(m.data);
