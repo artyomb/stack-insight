@@ -11,7 +11,7 @@ get '*/logs_ws*', &-> {
   if Async::WebSocket::Adapters::Rack.websocket?(env)
     Async::WebSocket::Adapters::Rack.open(env) do |connection|
       thread = Thread.new do
-        Open3.popen3("docker service logs -n 10 -f #{params[:service]} 2>&1") do |stdin, stdout, stderr, wait_thr|
+        Open3.popen3("docker service logs -n 10 -f #{params[:service]} 2>&1") do |_, stdout, _, _|
           while line = stdout.gets
             break if connection.closed?
             connection.write(line)
@@ -21,8 +21,6 @@ get '*/logs_ws*', &-> {
       end
 
       while connection.read; end
-    rescue => e
-      puts e.inspect
     ensure
       thread&.kill
     end
@@ -31,6 +29,8 @@ get '*/logs_ws*', &-> {
   end
 }
 get '*/logs*', &-> { slim :logs }
+get '*/tag*', &-> { slim :tag }
+get '*/journal*', &-> { slim :journal }
 get '*/inspect*', &-> { slim :inspect }
 get '*/ps*', &-> { slim :ps }
 get '*/update*', &-> { slim :update }

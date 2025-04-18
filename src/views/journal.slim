@@ -1,0 +1,16 @@
+ruby:
+  query = params[:query] || 'journalctl --no-pager -u docker -n 100 -m'
+
+h3 Killed
+pre#killed = `journalctl --no-pager --since "1 week ago" --until "now"  | grep "Killed process"`
+
+sass:
+  input[type="text"]
+    min-width: 20vw
+form action="/journal" method="get"
+  input type="text" name="query" value=query
+  input type="submit" value="Search"
+
+h3 Docker
+pre = `#{query}`
+

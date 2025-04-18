@@ -1,0 +1,53 @@
+ruby:
+  $container_images_cache ||= {}
+  target_tag = params[:tag]
+
+  ps = Async { JSON `docker ps --filter "label=com.docker.stack.namespace=#{params[:stack]}" --format '{{.ID}}' | xargs -r docker inspect -s 2>&1 | jq -s ` }
+  sps = Async { JSON `docker stack ps #{params[:stack]} --no-trunc --format "{{json .}}" | jq --arg stack "{}" '. + {Stack: $stack}' | jq -s . 2>&1` }
+
+  ps = ps.wait.first&.group_by { _1.dig 'Config', 'Labels', 'com.docker.swarm.task.id' }&.transform_values(&:first) || {}
+  sps = sps.wait.group_by { _1['Name'] }
+
+  tag_list = sps.map { |s_name, s|
+    svc = s.first
+    next unless svc
+
+    image_domain = svc['Image'].match(/^(?:(?<domain>[^\/]+\.[^\/]+(?::\d+)?)[\/])?(?<name>.+)$/)[1]
+
+    if image_domain
+      con = ps[svc['ID']] rescue 'n/a' # First replica, running task container
+      if con
+        image = $container_images_cache[con['Image']] ||= JSON(`docker image inspect #{con['Image']}`)[0]
+        c_digests = image['RepoDigests'].map{ _1[/sha256:.{64}/] }
+        version = image.dig( 'Config', 'Labels', 'org.opencontainers.image.version')
+        created = image['Created']
+      end
+    end
+
+    { Name: svc['Name'], ImageDomain: image_domain, Image: svc['Image'], Digests: c_digests, Version: version, Created: created }
+  }
+
+  tag_list = tag_list.select { _1[:ImageDomain] } + tag_list.reject { _1[:ImageDomain] }
+  columns = tag_list.first.keys - [:ImageDomain]
+
+
+h1 Tag:
+div stack: #{params[:stack]}
+div target_tag: #{params[:tag]}
+sass:
+  td.skip
+    opacity: 0.5
+
+pre: table
+  - columns.each do |k|
+    th = k
+  - tag_list.each do |t|
+    tr class=t['Klass']
+      - columns.each do |c|
+        -classes = [c.downcase]
+        -classes << 'skip' if t[:ImageDomain].nil?
+        td class=classes title=t["Title#{c}"]
+          - if t["Link#{c}"]
+            a href=s["Link#{c}"] == s[c]
+          - else
+            == t[c]
