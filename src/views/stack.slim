@@ -78,6 +78,10 @@ ruby:
 
       s['LinkVersion'] = con.dig('Config', 'Labels', 'com.gitlab.ci.pipelineurl')
 
+      s['LinkVersion'] ||= con.dig('Config', 'Labels', 'org.opencontainers.image.source')
+
+      s['Version'] ||= 'n/a' if s['LinkVersion']
+
       s['Commit'] = con.dig('Config', 'Labels', 'com.gitlab.ci.commit_message')
 
       s['Container Size'] = con.dig('SizeRw') # "SizeRw": 16828757,    "SizeRootFs" : 328033441,
