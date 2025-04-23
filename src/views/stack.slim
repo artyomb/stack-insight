@@ -107,10 +107,10 @@ pre: table
           - else
             == s[c]
       td
-        a.action href="ps/?service=#{s['Name']}" ps
-        a.action href="inspect/?service=#{s['Name']}" inspect
-        a.action href="logs/?service=#{s['Name']}" logs
-        a.action href="update/?service=#{s['Name']}" onclick="return confirm('Are you sure to Pull and Update \n#{s['Name']}?')" update
+        a.action href="ps/?service=#{s['Name']}" title="ps" P
+        a.action href="inspect/?service=#{s['Name']}" title="Inspect" I
+        a.action href="logs/?service=#{s['Name']}" title="Logs" L
+        a.action href="update/?service=#{s['Name']}" onclick="return confirm('Are you sure to Pull and Update \n#{s['Name']}?')" title="Update" U
 
 sass:
   a
