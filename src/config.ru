@@ -35,5 +35,6 @@ get '*/inspect*', &-> { slim :inspect }
 get '*/ps*', &-> { slim :ps }
 get '*/update*', &-> { slim :update }
 get '*', &-> { slim :index }
+post '*/tag*', &-> { slim :tag }
 
 run Sinatra::Application

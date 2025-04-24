@@ -19,35 +19,70 @@ ruby:
       if con
         image = $container_images_cache[con['Image']] ||= JSON(`docker image inspect #{con['Image']}`)[0]
         c_digests = image['RepoDigests'].map{ _1[/sha256:.{64}/] }
+        c_tags = image['RepoTags'].map { _1.split(':').last }
         version = image.dig( 'Config', 'Labels', 'org.opencontainers.image.version')
         created = image['Created']
       end
     end
 
-    { Name: svc['Name'], ImageDomain: image_domain, Image: svc['Image'], Digests: c_digests, Version: version, Created: created }
+    { Name: svc['Name'], ImageDomain: image_domain, Image: svc['Image'], Digests: c_digests, Tags: c_tags, Version: version, Created: created }
   }
 
   tag_list = tag_list.select { _1[:ImageDomain] } + tag_list.reject { _1[:ImageDomain] }
   columns = tag_list.first.keys - [:ImageDomain]
 
+  if request.post?
+    $container_images_cache = {}
+    outputs = tag_list.select { _1[:ImageDomain] }.map do |t|
+      Async do
+        o = ''
+        image = "#{t[:Image].split(':').first}@#{t[:Digests].first}"
+        t_image = "#{t[:Image].split(':').first}:#{target_tag}"
+        exe = ->(cmd) {
+          o += "# #{cmd}\n"
+          o += `#{cmd} 2>&1 | tee `
+        }
+        exe.call "docker pull #{image}"
+        exe.call "docker tag #{image} #{t_image}"
+        exe.call "docker push #{t_image} "
+        { output: o, image: , t_image: }
+      rescue
+        { output: o, image: , t_image:, error: "Error: #{$!.message}\n"}
+      end
+    end.map(&:wait)
+  end
 
-h1 Tag:
-div stack: #{params[:stack]}
-div target_tag: #{params[:tag]}
 sass:
   td.skip
     opacity: 0.5
+  input[type="text"]
+    min-width: 20vw
+  pre.error
+    color: red
 
-pre: table
-  - columns.each do |k|
-    th = k
-  - tag_list.each do |t|
-    tr class=t['Klass']
-      - columns.each do |c|
-        -classes = [c.downcase]
-        -classes << 'skip' if t[:ImageDomain].nil?
-        td class=classes title=t["Title#{c}"]
-          - if t["Link#{c}"]
-            a href=s["Link#{c}"] == s[c]
-          - else
-            == t[c]
+h1 Tag
+div stack: #{params[:stack]}
+div target_tag: #{params[:tag]}
+
+- if request.post?
+  - outputs.each do |o|
+    pre class=(o[:error] ? 'error' : '') = o[:output]
+
+- else
+  form action="" method="post"
+    input type="text" name="tag" value=target_tag
+    input type="submit" value="Tag images"
+
+  pre: table
+    - columns.each do |k|
+      th = k
+    - tag_list.each do |t|
+      tr class=t['Klass']
+        - columns.each do |c|
+          -classes = [c.downcase]
+          -classes << 'skip' if t[:ImageDomain].nil?
+          td class=classes title=t["Title#{c}"]
+            - if t["Link#{c}"]
+              a href=s["Link#{c}"] == s[c]
+            - else
+              == t[c]
