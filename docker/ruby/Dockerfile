@@ -15,7 +15,7 @@ RUN bundle install --jobs $(nproc) --retry=3 && \
 
 FROM ruby:3.3.1-slim-bookworm AS deploy
 RUN apt update && apt install --fix-missing -y bash curl libpq-dev openssh-client \
-      libpq-dev sqlite3 libssl-dev libgeos-dev docker.io jq\
+      libssl-dev docker.io jq\
      && rm -rf /var/lib/apt/lists/*
 
 COPY --from=base /usr/local/bundle /usr/local/bundle

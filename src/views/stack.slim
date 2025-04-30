@@ -68,6 +68,7 @@ ruby:
       #cut_domain = docker_image_full_name_with_subdir_name[/^(?:[^\/]*\.)?[^\/]+\/(.+)$/, 2]
       s['TitleImage'] = s['Image']
       s['Image'] = s['Image'][/^(?:(?<domain>[^\/]+\.[^\/]+(?::\d+)?)[\/])?(?<name>.+)$/,2] || ''
+      s['Image'] = s['Image'].gsub(/:([^:]+)$/, ':<span class="label">\1</span>')
 
       s['Image'] += "<span class='sha256'>@" + c_digests.map{ _1[0..15] }.join(',') + "...</span>"
       s['Image Created'] = con.dig 'Config', 'Labels', 'org.opencontainers.image.created'
@@ -123,6 +124,10 @@ sass:
     &:hover
       text-decoration: underline
 
+  span.label
+    background: #bfe3e8
+    border-radius: 5px
+    padding: 0 0.3em
   tr.new
     background: rgba(116, 255, 31, 0.15)
   tr.error
