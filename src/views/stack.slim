@@ -25,76 +25,90 @@ ruby:
     "#{format('%.2f', size).sub(/\.?0+$/, '')} #{units[unit]}"
   }
 
-  columns = %w[NameT Image Image\ Created Version Commit Replicas Container\ Size Restart\ Condition CurrentState]
-  services.each { |s|
-    si = services_i[s['Name']]
-    spec = si['Spec']
-    s['NameT'] = s['Name'].gsub(/^#{params[:stack]}_/, &->(s) { "<span class='stack_name'>#{s}</span>" })
+  columns = %w[NameT Image Image\ Created Version Commit Replicas RPS Container\ Size Restart\ Condition CurrentState]
+  services.map { |s|
+    Async {
+      si = services_i[s['Name']]
+      spec = si['Spec']
+      s['NameT'] = s['Name'].gsub(/^#{params[:stack]}_/, &->(s) { "<span class='stack_name'>#{s}</span>" })
 
-    svc = sps[s['Name']]&.first
-    svc_prev = sps[s['Name']]&.at(1)
-    next unless svc
+      svc = sps[s['Name']]&.first
+      svc_prev = sps[s['Name']]&.at(1)
+      next unless svc
 
-    s['CurrentState'] = svc['CurrentState'] rescue 'n/a'
+      s['CurrentState'] = svc['CurrentState'] rescue 'n/a'
 
-    unless !svc_prev || svc_prev['Error'].empty?
-      c,r = s['Replicas'].split('/')
-      if c != r
-        s['Klass'] = 'error_prev'
-        s['CurrentState'] += ' > ' + svc_prev['Error']
-      end
-    end
-
-    unless svc['Error']&.empty?
-      s['Klass'] = 'error'
-      s['CurrentState'] = svc['Error']
-    end
-
-    s['Replicas'] += ' g' if s['Mode'] == 'global'
-
-    con = s['Container'] = ps[svc['ID']] rescue 'n/a' # First replica, running task container
-    if con
-      image = $container_images_cache[con['Image']] ||= JSON(`docker image inspect #{con['Image']}`)[0]
-      c_digests = image['RepoDigests'].map { _1[/sha256:.{64}/] }
-      version = image.dig('Config', 'Labels', 'org.opencontainers.image.version')
-      i_created = image['Created']
-
-      created = Time.parse con['Created']
-      if ( Time.now.utc - created.utc < 60*60*6) && s['Klass'].nil?
-        s['Klass'] = 'new'
+      unless !svc_prev || svc_prev['Error'].empty?
+        c,r = s['Replicas'].split('/')
+        if c != r
+          s['Klass'] = 'error_prev'
+          s['CurrentState'] += ' > ' + svc_prev['Error']
+        end
       end
 
-      #docker_image_full_name_with_subdir_name = _1['Image']
-      #cut_domain = docker_image_full_name_with_subdir_name[/^(?:[^\/]*\.)?[^\/]+\/(.+)$/, 2]
-      s['TitleImage'] = s['Image']
-      s['Image'] = s['Image'][/^(?:(?<domain>[^\/]+\.[^\/]+(?::\d+)?)[\/])?(?<name>.+)$/,2] || ''
-      s['Image'] = s['Image'].gsub(/:([^:]+)$/, ':<span class="label">\1</span>')
+      unless svc['Error']&.empty?
+        s['Klass'] = 'error'
+        s['CurrentState'] = svc['Error']
+      end
 
-      s['Image'] += "<span class='sha256'>@" + c_digests.map{ _1[0..15] }.join(',') + "...</span>"
-      s['Image Created'] = con.dig 'Config', 'Labels', 'org.opencontainers.image.created'
-      s['Image Created'] ||= i_created
+      s['Replicas'] += ' g' if s['Mode'] == 'global'
 
-      s['Version'] = con.dig('Config', 'Labels', 'org.opencontainers.image.version') ||
-                     con.dig('Config', 'Labels', 'org.label-schema.version')
+      con = s['Container'] = ps[svc['ID']] rescue 'n/a' # First replica, running task container
+      if con
+        labels = si.dig( 'Spec', 'Labels')
+        port = labels.find { |l,v| l =~ /traefik.*.loadbalancer.server.port/ }
+        if port
+          port = port.last.to_i
+          metrics_txt = `docker exec #{con['Id']} curl -f -q localhost:#{port}/metrics`
+          if metrics_txt.lines.first =~ /^# TYPE/
+            metrics = PrometheusParser.parse_metrics(metrics_txt)
+            rps = metrics[:http_server_request_duration_seconds][:series].map { |s| [ s[:labels][:path], s[:sum]/s[:count] ] }
+            s['RPS'] = rps.map { _1[1] }.max.round(4)
+          end
+        end
 
-      s['LinkVersion'] = con.dig('Config', 'Labels', 'com.gitlab.ci.pipelineurl')
+        image = $container_images_cache[con['Image']] ||= JSON(`docker image inspect #{con['Image']}`)[0]
+        c_digests = image['RepoDigests'].map { _1[/sha256:.{64}/] }
+        version = image.dig('Config', 'Labels', 'org.opencontainers.image.version')
+        i_created = image['Created']
 
-      s['LinkVersion'] ||= con.dig('Config', 'Labels', 'org.opencontainers.image.source')
+        created = Time.parse con['Created']
+        if ( Time.now.utc - created.utc < 60*60*6) && s['Klass'].nil?
+          s['Klass'] = 'new'
+        end
 
-      s['Version'] ||= 'n/a' if s['LinkVersion']
+        #docker_image_full_name_with_subdir_name = _1['Image']
+        #cut_domain = docker_image_full_name_with_subdir_name[/^(?:[^\/]*\.)?[^\/]+\/(.+)$/, 2]
+        s['TitleImage'] = s['Image']
+        s['Image'] = s['Image'][/^(?:(?<domain>[^\/]+\.[^\/]+(?::\d+)?)[\/])?(?<name>.+)$/,2] || ''
+        s['Image'] = s['Image'].gsub(/:([^:]+)$/, ':<span class="label">\1</span>')
 
-      s['Commit'] = con.dig('Config', 'Labels', 'com.gitlab.ci.commit_message')
+        s['Image'] += "<span class='sha256'>@" + c_digests.map{ _1[0..15] }.join(',') + "...</span>"
+        s['Image Created'] = con.dig 'Config', 'Labels', 'org.opencontainers.image.created'
+        s['Image Created'] ||= i_created
 
-      s['Container Size'] = con.dig('SizeRw') # "SizeRw": 16828757,    "SizeRootFs" : 328033441,
-      # convert to human readable
-      # undefined method `human_size' for an instance of Integer
-      s['Container Size'] = number_to_human_size.call s['Container Size']
-    end
+        s['Version'] = con.dig('Config', 'Labels', 'org.opencontainers.image.version') ||
+                       con.dig('Config', 'Labels', 'org.label-schema.version')
 
-    s['Restart Condition'] = spec.dig 'TaskTemplate', 'RestartPolicy', 'Condition'
-    #s['Networks'] = con.dig('NetworkSettings', 'Networks').keys.join(', ') if con
-    # com.gitlab.ci.pipelineurl
-  }
+        s['LinkVersion'] = con.dig('Config', 'Labels', 'com.gitlab.ci.pipelineurl')
+
+        s['LinkVersion'] ||= con.dig('Config', 'Labels', 'org.opencontainers.image.source')
+
+        s['Version'] ||= 'n/a' if s['LinkVersion']
+
+        s['Commit'] = con.dig('Config', 'Labels', 'com.gitlab.ci.commit_message')
+
+        s['Container Size'] = con.dig('SizeRw') # "SizeRw": 16828757,    "SizeRootFs" : 328033441,
+        # convert to human readable
+        # undefined method `human_size' for an instance of Integer
+        s['Container Size'] = number_to_human_size.call s['Container Size']
+      end
+
+      s['Restart Condition'] = spec.dig 'TaskTemplate', 'RestartPolicy', 'Condition'
+      #s['Networks'] = con.dig('NetworkSettings', 'Networks').keys.join(', ') if con
+      # com.gitlab.ci.pipelineurl
+    }
+  }.map(&:wait)
 
 h1 Stack: #{params[:stack]}
 pre.description = description.wait

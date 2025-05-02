@@ -13,6 +13,8 @@ gem 'sass'
 gem 'rack'
 gem 'rackup'
 
+gem 'stack-service-base'
+
 # gem 'opentelemetry-sdk'
 # gem 'opentelemetry-exporter-otlp'
 # gem 'opentelemetry-instrumentation-all'

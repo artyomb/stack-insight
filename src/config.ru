@@ -5,6 +5,11 @@ require 'sinatra/reloader'
 require 'async/websocket/adapters/rack'
 require 'open3'
 
+require 'stack-service-base'
+require 'stack-service-base/prometheus_parser'
+
+StackServiceBase.rack_setup self
+
 get '*/stack*', &-> { slim :stack }
 
 get '*/logs_ws*', &-> {
