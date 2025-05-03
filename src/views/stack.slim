@@ -63,7 +63,7 @@ ruby:
           if metrics_txt.lines.first =~ /^# TYPE/
             metrics = PrometheusParser.parse_metrics(metrics_txt)
             rps = metrics[:http_server_request_duration_seconds][:series].map { |s| [ s[:labels][:path], s[:sum]/s[:count] ] }
-            s['RPS'] = rps.map { _1[1] }.max.round(4)
+            s['RPS'] = rps.map { _1[1] }.max.round(4) rescue 'n/a'
           end
         end
 
