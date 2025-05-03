@@ -27,10 +27,11 @@ ruby:
 
   columns = %w[NameT Image Image\ Created Version Commit Replicas RPS Container\ Size Restart\ Condition CurrentState]
   services.map { |s|
-    Async {
+    Async do
       si = services_i[s['Name']]
       spec = si['Spec']
       s['NameT'] = s['Name'].gsub(/^#{params[:stack]}_/, &->(s) { "<span class='stack_name'>#{s}</span>" })
+      s['Image'] = s['Image'].gsub(/:([^:]+)$/, ':<span class="label">\1</span>')
 
       svc = sps[s['Name']]&.first
       svc_prev = sps[s['Name']]&.at(1)
@@ -63,7 +64,7 @@ ruby:
           if metrics_txt.lines.first =~ /^# TYPE/
             metrics = PrometheusParser.parse_metrics(metrics_txt)
             rps = metrics[:http_server_request_duration_seconds][:series].map { |s| [ s[:labels][:path], s[:sum]/s[:count] ] }
-            s['RPS'] = rps.map { _1[1] }.max.round(4) rescue 'n/a'
+            s['RPS'] = rps.map { _1[1] }.max&.round(4) || 0
           end
         end
 
@@ -81,7 +82,6 @@ ruby:
         #cut_domain = docker_image_full_name_with_subdir_name[/^(?:[^\/]*\.)?[^\/]+\/(.+)$/, 2]
         s['TitleImage'] = s['Image']
         s['Image'] = s['Image'][/^(?:(?<domain>[^\/]+\.[^\/]+(?::\d+)?)[\/])?(?<name>.+)$/,2] || ''
-        s['Image'] = s['Image'].gsub(/:([^:]+)$/, ':<span class="label">\1</span>')
 
         s['Image'] += "<span class='sha256'>@" + c_digests.map{ _1[0..15] }.join(',') + "...</span>"
         s['Image Created'] = con.dig 'Config', 'Labels', 'org.opencontainers.image.created'
@@ -107,7 +107,9 @@ ruby:
       s['Restart Condition'] = spec.dig 'TaskTemplate', 'RestartPolicy', 'Condition'
       #s['Networks'] = con.dig('NetworkSettings', 'Networks').keys.join(', ') if con
       # com.gitlab.ci.pipelineurl
-    }
+    rescue =>e
+      puts "Exception: services.map Async >> #{s['Name']} : #{e.message}\n, #{e.backtrace.join("\n")}"
+    end
   }.map(&:wait)
 
 h1 Stack: #{params[:stack]}
