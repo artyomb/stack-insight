@@ -33,6 +33,7 @@ get '*/logs_ws*', &-> {
     slim :logs_ws
   end
 }
+get '*/tempo*', &-> { slim :tempo }
 get '*/logs*', &-> { slim :logs }
 get '*/tag*', &-> { slim :tag }
 get '*/journal*', &-> { slim :journal }
