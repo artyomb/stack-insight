@@ -1,6 +1,7 @@
 ruby:
   query = params[:query] || 'journalctl --no-pager -u docker -n 100 -m'
 
+
 h3 Killed
 pre#killed = `journalctl --no-pager --since "1 week ago" --until "now"  | grep "Killed process"`
 
