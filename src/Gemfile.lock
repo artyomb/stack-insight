@@ -377,7 +377,7 @@ GEM
     slim (5.2.1)
       temple (~> 0.10.0)
       tilt (>= 2.1.0)
-    stack-service-base (0.0.8)
+    stack-service-base (0.0.9)
       opentelemetry-exporter-otlp
       opentelemetry-instrumentation-all
       opentelemetry-sdk

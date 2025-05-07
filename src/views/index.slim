@@ -1,10 +1,10 @@
 ruby:
-  sps = Async { JSON `docker stack ls --format '{{.Name}}' | xargs -I{} sh -c 'docker stack ps {} --no-trunc --format "{{json .}}" | jq --arg stack "{}" '. + {Stack: $stack}''  | jq -s . 2>&1`  }
-  stack_ls = Async { JSON `docker stack ls --format '{{json .}}' | jq -s . 2>&1` }
-  ps = Async{ JSON `docker ps --no-trunc --format '{{json .}}' | jq -s . 2>&1` }
-  services = Async { JSON `docker service ls --format '{{json . }}' | jq -s . 2>&1` }
-
   columns = %w[ID Command Image Names Status]
+
+  sps = Async { otl_span(:sps) { JSON `docker stack ls --format '{{.Name}}' | xargs -I{} sh -c 'docker stack ps {} --no-trunc --format "{{json .}}" | jq --arg stack "{}" '. + {Stack: $stack}''  | jq -s . 2>&1` } }
+  stack_ls = Async { otl_span(:stack_ls) { JSON `docker stack ls --format '{{json .}}' | jq -s . 2>&1` } }
+  ps = Async{ otl_span(:ps) { JSON `docker ps --no-trunc --format '{{json .}}' | jq -s . 2>&1` } }
+  services = Async { otl_span(:services) { JSON `docker service ls --format '{{json . }}' | jq -s . 2>&1` } }
 
   stack_ls = stack_ls.wait
   sps = sps.wait.group_by { _1['Name'] }
