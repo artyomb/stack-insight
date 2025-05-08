@@ -31,7 +31,7 @@ ruby:
   ps = Async { otl_span(:ps) { JSON `docker ps --filter "label=com.docker.stack.namespace=#{params[:stack]}" --format '{{.ID}}' | xargs -r docker inspect -s 2>&1 | jq -s ` } }
   sps = Async { otl_span(:sps) { JSON `docker stack ps #{params[:stack]} --no-trunc --format "{{json .}}" | jq --arg stack "{}" '. + {Stack: $stack}' | jq -s . 2>&1` } }
   services = Async { otl_span(:services) { JSON `docker service ls --filter label=com.docker.stack.namespace=#{params[:stack]} --format '{{json . }}' | jq -s . 2>&1` } }
-  services_i = Async { otl_span(:services_i) { JSON `docker stack services #{params[:stack]} --format '{{.Name}}' | xargs -r -I{} docker service inspect {} --format '{{json . }}' | jq -s . 2>&1` } }
+  services_i = Async { otl_span(:services_i) { JSON `docker stack services #{params[:stack]} --format '{{.Name}}' | xargs -P 10 -r -I{} docker service inspect {} --format '{{json . }}' | jq -s . 2>&1` } }
   description = Async { otl_span(:description) { `docker config inspect --format '{{json .Spec.Data}}' #{params[:stack]}_readme | jq -r . | base64 -d`.strip } }
   tempo = Async { slim :tempo }
 
