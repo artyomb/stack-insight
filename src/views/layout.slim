@@ -29,6 +29,11 @@ html
           text-overflow: ellipsis
           //word-wrap: break-word
           //word-break: break-all
+          &.full
+            white-space: normal
+            overflow: auto
+            text-overflow: initial
+
       body
         font-family: monospace
         nav
@@ -64,3 +69,39 @@ html
       home.href = BASE_PATH + '/';
 
     == yield
+
+    javascript:
+      const list = document.querySelectorAll('.created, .time');
+      list.forEach(function (e) {
+        if (!e.innerText) return;
+
+        const t = new Date(e.innerText);
+        const now = new Date();
+        const diffSeconds = Math.floor((now - t) / 1000);
+
+        e.innerText = t.toLocaleString('en-US', {
+          year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+        });
+        e.classList.add('time');
+
+        const timeUnits = [[86400, 'd'], [3600, 'h'], [60, 'm'], [1, 's']];
+
+        let remaining = diffSeconds;
+        const ago = timeUnits.reduce((acc, [sec, unit]) => {
+          const val = Math.floor(remaining / sec);
+          remaining %= sec;
+          if (val === 0) return acc;
+          if (sec === 60 && diffSeconds >= 86400) return acc;
+          if (sec === 1 && diffSeconds >= 86400) return acc;
+          return acc + val + unit + ' ';
+        }, '').trim();
+
+        let ago_span = e.appendChild(document.createElement('span'));
+
+        if (diffSeconds < 86400)
+          ago_span.classList.add('recent');
+        else
+          ago_span.classList.add('old');
+
+        ago_span.innerText = `(${ago} ago)`;
+      });

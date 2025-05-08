@@ -171,7 +171,7 @@ pre: table
         a.action href="inspect/?service=#{s['Name']}" title="Inspect" I
         a.action href="logs/?service=#{s['Name']}" title="Logs" L
         a.action href="update/?service=#{s['Name']}" onclick="return confirm('Are you sure to Pull and Update \n#{s['Name']}?')" title="Update" U
-
+== slim :tempo
 sass:
   a
     color: #2e54b9
@@ -199,38 +199,3 @@ sass:
     .recent
       background: #fff80026
 
-javascript:
-  const list = document.querySelectorAll('.created');
-  list.forEach(function(e) {
-    if (!e.innerText) return;
-
-    const t = new Date(e.innerText);
-    const now = new Date();
-    const diffSeconds = Math.floor((now - t) / 1000);
-
-    e.innerText = t.toLocaleString('en-US', {
-      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
-    });
-    e.classList.add('time');
-
-    const timeUnits = [ [86400, 'd'], [3600, 'h'], [60, 'm'], [1, 's'] ];
-
-    let remaining = diffSeconds;
-    const ago = timeUnits.reduce((acc, [sec, unit]) => {
-      const val = Math.floor(remaining / sec);
-      remaining %= sec;
-      if (val === 0) return acc;
-      if (sec === 60 && diffSeconds >= 86400) return acc;
-      if (sec === 1 && diffSeconds >= 86400) return acc;
-      return acc + val + unit + ' ';
-    }, '').trim();
-
-    let ago_span = e.appendChild(document.createElement('span'));
-
-    if (diffSeconds < 86400)
-      ago_span.classList.add('recent');
-    else
-      ago_span.classList.add('old');
-
-    ago_span.innerText = `(${ago} ago)`;
-  });
