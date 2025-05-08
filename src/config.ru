@@ -35,7 +35,7 @@ get '*/logs_ws*', &-> {
 }
 get '/favicon.ico' do
   dinfo = JSON `docker info --format "{{json .}}"`
-  name = dinfo['Name'].split(/([.-_])/).map { |s| s.capitalize.chars.first }.slice(0..1).join
+  name = dinfo['Name'].split(/\.|_|-/).map { |s| s.capitalize.chars.first }.slice(0..1).join
   content_type 'image/svg+xml'
   <<~SVG
     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
