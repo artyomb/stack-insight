@@ -33,6 +33,7 @@ ruby:
   services = Async { otl_span(:services) { JSON `docker service ls --filter label=com.docker.stack.namespace=#{params[:stack]} --format '{{json . }}' | jq -s . 2>&1` } }
   services_i = Async { otl_span(:services_i) { JSON `docker stack services #{params[:stack]} --format '{{.Name}}' | xargs -r -I{} docker service inspect {} --format '{{json . }}' | jq -s . 2>&1` } }
   description = Async { otl_span(:description) { `docker config inspect --format '{{json .Spec.Data}}' #{params[:stack]}_readme | jq -r . | base64 -d`.strip } }
+  tempo = Async { slim :tempo }
 
   ps = ps.wait.first&.group_by { _1.dig 'Config', 'Labels', 'com.docker.swarm.task.id' }&.transform_values(&:first) || {}
   sps = sps.wait.group_by { _1['Name'][/(.*)\./, 1] }
@@ -171,7 +172,9 @@ pre: table
         a.action href="inspect/?service=#{s['Name']}" title="Inspect" I
         a.action href="logs/?service=#{s['Name']}" title="Logs" L
         a.action href="update/?service=#{s['Name']}" onclick="return confirm('Are you sure to Pull and Update \n#{s['Name']}?')" title="Update" U
-== slim :tempo
+
+== tempo.wait
+
 sass:
   a
     color: #2e54b9
