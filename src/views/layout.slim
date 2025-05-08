@@ -1,8 +1,11 @@
+ruby:
+  dinfo = JSON `docker info --format "{{json .}}"`
+
 doctype html
 html
   head
     meta[charset="utf-8"]
-    title Stack insight
+    title = dinfo['Name']
     meta[name="viewport" content="width=device-width, initial-scale=1.0"]
     sass:
       body1
@@ -51,7 +54,6 @@ html
 
 
   body
-    - dinfo = JSON `docker info --format "{{json .}}"`
     nav style="display: flex; justify-content: space-between; padding: 1em;"
       a.home-link href="#" #Home
       .name

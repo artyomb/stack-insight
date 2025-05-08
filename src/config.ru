@@ -33,6 +33,17 @@ get '*/logs_ws*', &-> {
     slim :logs_ws
   end
 }
+get '/favicon.ico' do
+  dinfo = JSON `docker info --format "{{json .}}"`
+  name = dinfo['Name'].split( '.' ).map { |s| s.capitalize.chars.first }.slice(0..1).join
+  content_type 'image/svg+xml'
+  <<~SVG
+    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+      <rect width="32" height="32" fill="#4A4A4A"/>
+      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="white" font-family="Arial" font-size="16">#{name}</text>
+    </svg>
+  SVG
+end
 get '*/tempo*', &-> { slim :tempo }
 get '*/logs*', &-> { slim :logs }
 get '*/tag*', &-> { slim :tag }
