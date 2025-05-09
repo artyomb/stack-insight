@@ -50,6 +50,7 @@ get '/favicon.ico' do
   favicon
 end
 get '*/tempo*', &-> { slim :tempo }
+get '*/metrics*', &-> { slim :metrics }
 get '*/logs*', &-> { slim :logs }
 get '*/tag*', &-> { slim :tag }
 get '*/journal*', &-> { slim :journal }

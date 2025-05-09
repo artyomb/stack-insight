@@ -34,7 +34,7 @@ ruby:
     s[:attributes]['service.name'].gsub!(/^#{params[:stack]}_/, &->(s) { "<span class='stack_name'>#{s}</span>" })
   }
 
-h2 Exceptions: #{params[:stack]}
+h2 Exceptions
 / pre#traces = JSON.pretty_generate(service_errors)
 table
   tr
