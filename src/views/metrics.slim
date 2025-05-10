@@ -1,16 +1,17 @@
 ruby:
+  _range = 60 * 60
+
   _ps = Async { JSON `docker ps --filter "label=com.docker.swarm.service.name=grafana_grafana" --format '{{.ID}}' | xargs -r docker inspect -s 2>&1 | jq -s ` }
   _ps = _ps.wait.first&.group_by { _1.dig 'Config', 'Labels', 'com.docker.swarm.task.id' }&.transform_values(&:first) || {}
   _metrics = []
 
   _con = _ps.first.last
   if _con
-    range = 10*30*60
     query ={
             query: %(topk(25, sum by (service,code,method,router,xrequesthost,xrequestpath)(traefik_router_requests_total{service=~"#{params[:stack]}.*"}) > 0)),
             #query: %(topk(25, sum by (service,code,router,xrequesthost,xrequestpath)(rate(traefik_router_requests_total{service=~"map-back.*"}[#{range}s])) > 0)),
-            start: (Time.now  - range).to_i, end: Time.now.to_i,
-            step: "#{range+1}s"
+            start: (Time.now  - _range).to_i, end: Time.now.to_i,
+            step: "#{_range + 1}s"
     }
     metrics_txt = `docker exec #{_con['Id']} curl -G -L -s http://prometheus:9090//api/v1/query_range  #{ query.map { |k, v| "--data-urlencode '#{k}=#{v}' " }.join ' ' } 2>&1`
     begin
@@ -25,7 +26,7 @@ ruby:
     _metrics.sort_by! { -_1[:count] }
   end
 sass:
-  .ok
+  //.ok
     //background: green
   .redirect
     background: rgba(0, 0, 255, 0.19)
@@ -35,7 +36,10 @@ sass:
     background: rgba(255, 0, 0, 0.2)
 
 
-h2 Requests
+h2
+  | Requests
+  span.time.ago =(Time.now  - _range).utc
+
 / pre#logs = JSON.pretty_generate metrics
 table
   tr

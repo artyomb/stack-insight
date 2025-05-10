@@ -3,6 +3,7 @@ ruby:
   # { resource.deployment.environment="#{params[:stack]}" && name=~".*" &&  status=error}&& { }  | select( kind, status, .service_name, .node_id, .component, span.http.status.code, span.http.target )
   # { event:name != "" }
 
+  _range = 60 * 60
   ps = Async { JSON `docker ps --filter "label=com.docker.swarm.service.name=grafana_grafana" --format '{{.ID}}' | xargs -r docker inspect -s 2>&1 | jq -s ` }
   ps = ps.wait.first&.group_by { _1.dig 'Config', 'Labels', 'com.docker.swarm.task.id' }&.transform_values(&:first) || {}
   service_errors = []
@@ -12,7 +13,7 @@ ruby:
     #traces = `docker exec #{con['Id']} curl -G -s  http://tempo:3200/api/search --data-urlencode 'tags=service.name=#{params[:service]}' --data-urlencode 'q={ .deployment.environment = "map-back" }' --data-urlencode limit=100 2>&1`
     query = {
             q: %[{ resource.deployment.environment="#{params[:stack]}" && event:name = "exception" } | select( kind, status, resource.service.name, event.exception.message ) ],
-            start: (Time.now - 60*60).to_i, end: Time.now.to_i, limit: 1000, spss: 100
+            start: (Time.now - _range).to_i, end: Time.now.to_i, limit: 1000, spss: 100
     }
     traces = `docker exec #{con['Id']} curl -G -s  http://tempo:3200/api/search  #{ query.map { |k,v| "--data-urlencode '#{k}=#{v}' " }.join ' ' } 2>&1`
     begin
@@ -34,7 +35,13 @@ ruby:
     s[:attributes]['service.name'].gsub!(/^#{params[:stack]}_/, &->(s) { "<span class='stack_name'>#{s}</span>" })
   }
 
-h2 Exceptions
+sass:
+  .has_errors
+    background: #ff00000d
+h2 class=( service_errors.size > 0 ? 'has_errors' : nil)
+  | Exceptions
+  span.time.ago =(Time.now  - _range).utc
+
 / pre#traces = JSON.pretty_generate(service_errors)
 table
   tr

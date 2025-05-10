@@ -3,6 +3,7 @@ ruby:
 
   service_errors = Async do
     otl_span(:espans) {
+      _range = 60 * 60
       ps = Async { JSON `docker ps --filter "label=com.docker.swarm.service.name=grafana_grafana" --format '{{.ID}}' | xargs -r docker inspect -s 2>&1 | jq -s ` }
       ps = ps.wait.first&.group_by { _1.dig 'Config', 'Labels', 'com.docker.swarm.task.id' }&.transform_values(&:first) || {}
       service_errors_ = Hash.new(0)
@@ -10,7 +11,7 @@ ruby:
       con = ps.first.last
       if con
         query = { q: %[{ resource.deployment.environment="#{params[:stack]}" && name=~".*" &&  status=error}],
-                  start: (Time.now - 30 * 60).to_i, end: Time.now.to_i, limit: 100, spss: 1 }
+                  start: (Time.now - _range).to_i, end: Time.now.to_i, limit: 200, spss: 1 }
         traces = `docker exec #{con['Id']} curl -G -s  http://tempo:3200/api/search  #{ query.map { |k, v| "--data-urlencode '#{k}=#{v}' " }.join ' ' } 2>&1`
         traces_ = JSON traces, symbolize_names: true rescue traces
         traces_[:traces]&.each do |t|

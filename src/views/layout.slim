@@ -38,6 +38,10 @@ html
             overflow: auto
             text-overflow: initial
 
+      h1,h2
+        span
+          font-size: 0.7rem
+
       body
         font-family: monospace
         nav
@@ -82,10 +86,14 @@ html
         const now = new Date();
         const diffSeconds = Math.floor((now - t) / 1000);
 
-        e.innerText = t.toLocaleString('en-US', {
-          year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
-        });
-        e.classList.add('time');
+        if( e.classList.contains('ago') ){
+          e.innerText = ''; // Ago only
+        } else {
+          e.innerText = t.toLocaleString('en-US', {
+            year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+          });
+          e.classList.add('time');
+        }
 
         const timeUnits = [[86400, 'd'], [3600, 'h'], [60, 'm'], [1, 's']];
 
@@ -106,5 +114,9 @@ html
         else
           ago_span.classList.add('old');
 
-        ago_span.innerText = `(${ago} ago)`;
+        if( e.classList.contains('ago') ){
+          ago_span.innerText = `${ago} ago`;
+        }else{
+          ago_span.innerText = `(${ago} ago)`;
+        }
       });
