@@ -8,7 +8,7 @@ ruby:
   _con = _ps.first.last
   if _con
     query ={
-            query: %(topk(25, sum by (service,code,method,router,xrequesthost,xrequestpath)(traefik_router_requests_total{service=~"#{params[:stack]}.*"}) > 0)),
+            query: %(topk(25, sum by (service,code,method,router,xrequesthost,xforwardeduri)(traefik_router_requests_total{service=~"#{params[:stack]}.*"}) > 0)),
             #query: %(topk(25, sum by (service,code,router,xrequesthost,xrequestpath)(rate(traefik_router_requests_total{service=~"map-back.*"}[#{range}s])) > 0)),
             start: (Time.now  - _range).to_i, end: Time.now.to_i,
             step: "#{_range + 1}s"
@@ -48,7 +48,7 @@ table
     th Method
     th Service
     th Router
-    th Path
+    th Uri
   tr
     - _metrics.each do |m|
       ruby:
@@ -66,5 +66,5 @@ table
         td = m[:method]
         td = m[:service]
         td = m[:router]
-        td = m[:xrequestpath]
+        td = m[:xforwardeduri]
 
