@@ -58,12 +58,13 @@ ruby:
 
   service_errors = service_errors.wait
 
-  columns = %w[NameT Image Image\ Created Version Commit Replicas RPS ESpans Container\ Size Restart\ Condition CurrentState]
+  columns = %w[NameT Image Image\ Age Version Commit Replicas RPS ESpans Container\ Size CurrentState]
   services.map { |s|
     Async do
       si = services_i[s['Name']]
       spec = si['Spec']
       s['NameT'] = s['Name'].gsub(/^#{params[:stack]}_/, &->(s) { "<span class='stack_name'>#{s}</span>" })
+      s['TitleImage'] = s['Image']
       s['Image'] = s['Image'].gsub(/:([^:]+)$/, ':<span class="label">\1</span>')
 
       svc = sps[s['Name']]&.first
@@ -122,12 +123,13 @@ ruby:
 
         #docker_image_full_name_with_subdir_name = _1['Image']
         #cut_domain = docker_image_full_name_with_subdir_name[/^(?:[^\/]*\.)?[^\/]+\/(.+)$/, 2]
-        s['TitleImage'] = s['Image']
         s['Image'] = s['Image'][/^(?:(?<domain>[^\/]+\.[^\/]+(?::\d+)?)[\/])?(?<name>.+)$/,2] || ''
 
-        s['Image'] += "<span class='sha256'>@" + c_digests.map{ _1[0..15] }.join(',') + "...</span>"
-        s['Image Created'] = con.dig 'Config', 'Labels', 'org.opencontainers.image.created'
-        s['Image Created'] ||= i_created
+        #s['Image'] += "<span class='sha256'>@" + c_digests.map{ _1[0..15] }.join(',') + "...</span>"
+
+        s['Image Age'] = con.dig 'Config', 'Labels', 'org.opencontainers.image.created'
+        s['Image Age'] ||= i_created
+        s['TdKlassImage Age'] = 'time'
 
         s['Version'] = con.dig('Config', 'Labels', 'org.opencontainers.image.version') ||
                        con.dig('Config', 'Labels', 'org.label-schema.version')
@@ -147,6 +149,8 @@ ruby:
       end
 
       s['Restart Condition'] = spec.dig 'TaskTemplate', 'RestartPolicy', 'Condition'
+      s['Replicas'] += ' :' + s['Restart Condition']
+
       #s['Networks'] = con.dig('NetworkSettings', 'Networks').keys.join(', ') if con
       # com.gitlab.ci.pipelineurl
     rescue =>e
@@ -189,6 +193,8 @@ sass:
     background: #bfe3e8
     border-radius: 5px
     padding: 0 0.3em
+  .currentstate
+    max-width: 15em
   tr.new
     background: rgba(116, 255, 31, 0.15)
   tr.error
@@ -198,8 +204,8 @@ sass:
   tr.error_prev
     background: rgba(255, 0, 0, 0.07)
   .time
-    span
-      margin-left: 1em
+    //span
+    //  margin-left: 1em
     .old
       opacity: 0.4
     .recent

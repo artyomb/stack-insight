@@ -8,12 +8,14 @@ html
     meta[charset="utf-8"]
     title = dinfo['Name']
     meta[name="viewport" content="width=device-width, initial-scale=1.0"]
+    / link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700&display=swap" rel="stylesheet"
+    link href="/fonts/jet_brains_mono.css" rel="stylesheet"
     sass:
       body1
         background-color: black
         color: white
       .action
-        margin-right: 1em
+        margin-right: 0.6em
       .sha256, .stack_name, .container_name
         opacity: 0.5
         margin-left: 0.3em
@@ -40,10 +42,11 @@ html
 
       h1,h2
         span
-          font-size: 0.7rem
+          font-size: 0.9rem
 
+      html, pre
+        font-family: "JetBrains Mono", monospace
       body
-        font-family: monospace
         nav
           margin: -0.5em
           background: #ededed
@@ -56,6 +59,8 @@ html
           .version
             margin-right: 4em
 
+      .local_time
+        display: none
 
 
   body
@@ -85,15 +90,14 @@ html
         const t = new Date(e.innerText);
         const now = new Date();
         const diffSeconds = Math.floor((now - t) / 1000);
+        e.innerText = '';
 
-        if( e.classList.contains('ago') ){
-          e.innerText = ''; // Ago only
-        } else {
-          e.innerText = t.toLocaleString('en-US', {
-            year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
-          });
-          e.classList.add('time');
-        }
+        let local_time = e.appendChild(document.createElement('span'));
+        local_time.classList.add('local_time');
+
+        local_time.innerText = t.toLocaleString('en-US', {
+          year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+        });
 
         const timeUnits = [[86400, 'd'], [3600, 'h'], [60, 'm'], [1, 's']];
 
@@ -108,15 +112,11 @@ html
         }, '').trim();
 
         let ago_span = e.appendChild(document.createElement('span'));
-
+        ago_span.setAttribute('title', local_time.innerText);
         if (diffSeconds < 86400)
           ago_span.classList.add('recent');
         else
           ago_span.classList.add('old');
 
-        if( e.classList.contains('ago') ){
-          ago_span.innerText = `${ago} ago`;
-        }else{
-          ago_span.innerText = `(${ago} ago)`;
-        }
+        ago_span.innerText = `${ago}`;
       });
