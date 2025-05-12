@@ -69,7 +69,7 @@ error do
   <<~HTML
     <h2>error<h2>
     <pre>"#{env['sinatra.error']}"</pre>
-    <pre>"#{env['sinatra.error'].backtrace.joind "\n"}"</pre>
+    <pre>"#{env['sinatra.error'].backtrace.join "\n"}"</pre>
   HTML
 end
 
