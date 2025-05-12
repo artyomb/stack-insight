@@ -40,7 +40,7 @@ sass:
 
 h2
   | Requests
-  span " >=#{_min_count}"
+  span >=#{_min_count}
   span.time.ago =(Time.now  - _range).utc
 
 / pre#logs = JSON.pretty_generate metrics
