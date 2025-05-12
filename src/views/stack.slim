@@ -80,8 +80,14 @@ ruby:
         s['ESpans'] = ''
       end
 
+      s['Restart Condition'] = spec.dig 'TaskTemplate', 'RestartPolicy', 'Condition'
+      c,r = s['Replicas'].split('/')
+
+      if c.to_i == 0 && s['Restart Condition'] == 'on-failure'
+        s['Klass'] = 'not_running'
+      end
+
       unless !svc_prev || svc_prev['Error'].empty?
-        c,r = s['Replicas'].split('/')
         if c != r
           s['Klass'] = 'error_prev'
           s['CurrentState'] += ' > ' + svc_prev['Error']
@@ -94,6 +100,7 @@ ruby:
       end
 
       s['Replicas'] += ' g' if s['Mode'] == 'global'
+      s['Replicas'] += ' :' + s['Restart Condition']
 
       con = s['Container'] = ps[svc['ID']] rescue 'n/a' # First replica, running task container
       if con
@@ -148,12 +155,10 @@ ruby:
         s['Container Size'] = number_to_human_size.call s['Container Size']
       end
 
-      s['Restart Condition'] = spec.dig 'TaskTemplate', 'RestartPolicy', 'Condition'
-      s['Replicas'] += ' :' + s['Restart Condition']
-
       #s['Networks'] = con.dig('NetworkSettings', 'Networks').keys.join(', ') if con
       # com.gitlab.ci.pipelineurl
     rescue =>e
+      s['Error'] = e.message
       puts "Exception: services.map Async >> #{s['Name']} : #{e.message}\n, #{e.backtrace.join("\n")}"
     end
   }.map(&:wait)
@@ -167,6 +172,8 @@ pre: table
   th Actions
   - services.each do |s|
     tr class=s['Klass']
+      - if s['Error']
+        td = s['Error']
       - columns.each do |c|
         td class=(c.downcase + ' ' + s["TdKlass#{c}"].to_s) title=s["Title#{c}"]
           -if s["Link#{c}"]
@@ -195,6 +202,8 @@ sass:
     padding: 0 0.3em
   .currentstate
     max-width: 15em
+  tr.not_running
+    background: rgba(182, 182, 182, 0.2)
   tr.new
     background: rgba(116, 255, 31, 0.15)
   tr.error
