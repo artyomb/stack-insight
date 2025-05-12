@@ -60,4 +60,17 @@ get '*/update*', &-> { slim :update }
 get '*', &-> { slim :index }
 post '*/tag*', &-> { slim :tag }
 
+set :show_exceptions, false
+error do
+  $stderr.puts "Error: #{env['sinatra.error']}"
+  $stderr.puts env['sinatra.error'].backtrace.join("\n")
+
+  status 500
+  <<~HTML
+    <h2>error<h2>
+    <pre>"#{env['sinatra.error']}"</pre>
+    <pre>"#{env['sinatra.error'].backtrace.joind "\n"}"</pre>
+  HTML
+end
+
 run Sinatra::Application
