@@ -4,7 +4,7 @@ ruby:
   # { event:name != "" }
 
   _range = 60 * 60
-  ps = Async { JSON `docker ps #{@calc_size} --filter "label=com.docker.swarm.service.name=grafana_grafana" --format '{{.ID}}' | xargs -r docker inspect -s 2>&1 | jq -s ` }
+  ps = Async { JSON `docker ps #{@calc_size} --filter "label=com.docker.swarm.service.name=grafana_grafana" --format '{{.ID}}' | xargs -r docker inspect #{@calc_size_inspect} 2>&1 | jq -s ` }
   ps = ps.wait.first&.group_by { _1.dig 'Config', 'Labels', 'com.docker.swarm.task.id' }&.transform_values(&:first) || {}
   service_errors = []
 

@@ -2,7 +2,7 @@ ruby:
   _min_count = 2
   _range = 60 * 60
 
-  _ps = Async { JSON `docker ps #{@calc_size} --filter "label=com.docker.swarm.service.name=grafana_grafana" --format '{{.ID}}' | xargs -r docker inspect -s 2>&1 | jq -s ` }
+  _ps = Async { JSON `docker ps #{@calc_size} --filter "label=com.docker.swarm.service.name=grafana_grafana" --format '{{.ID}}' | xargs -r docker inspect #{@calc_size_inspect} 2>&1 | jq -s ` }
   _ps = _ps.wait.first&.group_by { _1.dig 'Config', 'Labels', 'com.docker.swarm.task.id' }&.transform_values(&:first) || {}
   _metrics = []
 
@@ -40,7 +40,7 @@ sass:
 
 h2
   | Requests
-  = " >=#{_min_count}"
+  span " >=#{_min_count}"
   span.time.ago =(Time.now  - _range).utc
 
 / pre#logs = JSON.pretty_generate metrics

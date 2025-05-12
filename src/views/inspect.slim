@@ -4,7 +4,7 @@ h2 Docker ps (current Node)
 pre = ps
 h2 Docker inspect (current Node)
 - c_id = ps.split(' ')[-1]
-pre = `docker inspect -s #{c_id} 2>&1`
+pre = `docker inspect #{@calc_size_inspect} #{c_id} 2>&1`
 h2 Docker service ps
 pre = `docker service ps --no-trunc #{params[:service]} 2>&1`
 h2 Docker service inspect
