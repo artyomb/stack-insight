@@ -29,7 +29,7 @@ ruby:
   end
 
   $container_images_cache ||= {}
-  ps = Async { otl_span(:ps) { JSON `docker ps #{@calc_size} --filter "label=com.docker.stack.namespace=#{params[:stack]}" --format '{{.ID}}' | xargs -r docker inspect -s 2>&1 | jq -s ` } }
+  ps = Async { otl_span(:ps) { JSON `docker ps #{@calc_size} --filter "label=com.docker.stack.namespace=#{params[:stack]}" --format '{{.ID}}' | xargs -r docker inspect #{@calc_size_inspect} 2>&1 | jq -s ` } }
   sps = Async { otl_span(:sps) { JSON `docker stack ps #{params[:stack]} --no-trunc --format "{{json .}}" | jq --arg stack "{}" '. + {Stack: $stack}' | jq -s . 2>&1` } }
   services = Async { otl_span(:services) { JSON `docker service ls --filter label=com.docker.stack.namespace=#{params[:stack]} --format '{{json . }}' | jq -s . 2>&1` } }
   services_i = Async { otl_span(:services_i) { JSON `docker stack services #{params[:stack]} --format '{{.Name}}' | xargs -P 10 -r -I{} docker service inspect {} --format '{{json . }}' | jq -s . 2>&1` } }

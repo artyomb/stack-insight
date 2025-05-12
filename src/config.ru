@@ -11,7 +11,8 @@ require 'stack-service-base/prometheus_parser'
 
 
 before do
-  @calc_size = '--size=false'
+  @calc_size = ENV['CONTAINER_SIZE'] == 'false' ? '--size=false' : ''
+  @calc_size_inspect = ENV['CONTAINER_SIZE'] == 'false' ? '' : '-s'
 end
 
 StackServiceBase.rack_setup self
