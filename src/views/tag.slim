@@ -2,7 +2,7 @@ ruby:
   $container_images_cache ||= {}
   target_tag = params[:tag]
 
-  ps = Async { JSON `docker ps --filter "label=com.docker.stack.namespace=#{params[:stack]}" --format '{{.ID}}' | xargs -r docker inspect -s 2>&1 | jq -s ` }
+  ps = Async { JSON `docker ps #{@calc_size} --filter "label=com.docker.stack.namespace=#{params[:stack]}" --format '{{.ID}}' | xargs -r docker inspect -s 2>&1 | jq -s ` }
   sps = Async { JSON `docker stack ps #{params[:stack]} --no-trunc --format "{{json .}}" | jq --arg stack "{}" '. + {Stack: $stack}' | jq -s . 2>&1` }
 
   ps = ps.wait.first&.group_by { _1.dig 'Config', 'Labels', 'com.docker.swarm.task.id' }&.transform_values(&:first) || {}

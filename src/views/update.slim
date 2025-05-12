@@ -4,7 +4,7 @@
 h1 Update Service: #{params[:service]}
 - image =`docker service inspect #{params[:service]} --format '{{.Spec.TaskTemplate.ContainerSpec.Image}}'`
 - image = image.gsub(/@sha256:.*/, '').strip
-- ps = Async { JSON `docker ps --filter "label=com.docker.swarm.service.name=#{params[:service]}" --format '{{.ID}}' | xargs -r docker inspect 2>&1 | jq -s` }
+- ps = Async { JSON `docker ps #{@calc_size} --filter "label=com.docker.swarm.service.name=#{params[:service]}" --format '{{.ID}}' | xargs -r docker inspect 2>&1 | jq -s` }
 - ps = ps.wait.first
 - container_is_outdated = false
 
@@ -30,7 +30,7 @@ pre = pull
   h2 Update service
   pre = `docker service update --with-registry-auth --force #{params[:service]} --image "#{image}@#{image_digest}" --no-resolve-image 2>&1 | grep -vE '\[.*=>.*\]'`
   h2 Docker ps (current Node)
-  - ps = `docker ps --no-trunc 2>&1 | grep #{params[:service]}`.gsub /\s+/, ' '
+  - ps = `docker ps #{@calc_size} --no-trunc 2>&1 | grep #{params[:service]}`.gsub /\s+/, ' '
   pre = ps
   h2 Docker service ps
   pre = `docker service ps --no-trunc #{params[:service]} 2>&1`

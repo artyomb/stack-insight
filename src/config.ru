@@ -8,6 +8,12 @@ require 'open3'
 require 'stack-service-base'
 require 'stack-service-base/prometheus_parser'
 
+
+
+before do
+  @calc_size = '--size=false'
+end
+
 StackServiceBase.rack_setup self
 helpers do
   def favicon

@@ -1,14 +1,15 @@
 ruby:
+  _min_count = 2
   _range = 60 * 60
 
-  _ps = Async { JSON `docker ps --filter "label=com.docker.swarm.service.name=grafana_grafana" --format '{{.ID}}' | xargs -r docker inspect -s 2>&1 | jq -s ` }
+  _ps = Async { JSON `docker ps #{@calc_size} --filter "label=com.docker.swarm.service.name=grafana_grafana" --format '{{.ID}}' | xargs -r docker inspect -s 2>&1 | jq -s ` }
   _ps = _ps.wait.first&.group_by { _1.dig 'Config', 'Labels', 'com.docker.swarm.task.id' }&.transform_values(&:first) || {}
   _metrics = []
 
   _con = _ps.first.last
   if _con
     query ={
-            query: %(topk(25, sum by (service,code,method,router,xforwardedhost,xrequestpath)(increase(traefik_router_requests_total{service=~"#{params[:stack]}.*"}[#{_range}s])) > 0)),
+            query: %(topk(100, sum by (service,code,method,router,xforwardedhost,xrequestpath)(increase(traefik_router_requests_total{service=~"#{params[:stack]}.*"}[#{_range}s])) > #{_min_count})),
             #query: %(topk(25, sum by (service,code,router,xrequesthost,xrequestpath)(rate(traefik_router_requests_total{service=~"map-back.*"}[#{range}s])) > 0)),
             # sum(increase(traefik_service_requests_total{service=~"map-back_grib.*"}[5m]))
             start: (Time.now  - _range).to_i, end: Time.now.to_i,
@@ -39,6 +40,7 @@ sass:
 
 h2
   | Requests
+  = " >=#{_min_count}"
   span.time.ago =(Time.now  - _range).utc
 
 / pre#logs = JSON.pretty_generate metrics
