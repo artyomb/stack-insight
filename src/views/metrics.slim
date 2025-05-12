@@ -8,8 +8,9 @@ ruby:
   _con = _ps.first.last
   if _con
     query ={
-            query: %(topk(25, sum by (service,code,method,router,xforwardedhost,xrequestpath)(traefik_router_requests_total{service=~"#{params[:stack]}.*"}) > 0)),
+            query: %(topk(25, sum by (service,code,method,router,xforwardedhost,xrequestpath)(increase(traefik_router_requests_total{service=~"#{params[:stack]}.*"}[#{_range}s])) > 0)),
             #query: %(topk(25, sum by (service,code,router,xrequesthost,xrequestpath)(rate(traefik_router_requests_total{service=~"map-back.*"}[#{range}s])) > 0)),
+            # sum(increase(traefik_service_requests_total{service=~"map-back_grib.*"}[5m]))
             start: (Time.now  - _range).to_i, end: Time.now.to_i,
             step: "#{_range}s"
     }
