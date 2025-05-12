@@ -9,6 +9,10 @@ require 'stack-service-base'
 require 'stack-service-base/prometheus_parser'
 
 
+use Rack.middleware_klass do |env, _app|
+  env['PATH_INFO'].gsub!(/.*insight/, '')
+  _app.call env
+end
 
 before do
   @calc_size = ENV['CONTAINER_SIZE'] == 'false' ? '--size=false' : ''
@@ -56,16 +60,17 @@ get '/favicon.ico' do
   content_type 'image/svg+xml'
   favicon
 end
-get '*/tempo*', &-> { slim :tempo }
-get '*/metrics*', &-> { slim :metrics }
-get '*/logs*', &-> { slim :logs }
-get '*/tag*', &-> { slim :tag }
-get '*/journal*', &-> { slim :journal }
-get '*/inspect*', &-> { slim :inspect }
-get '*/ps*', &-> { slim :ps }
-get '*/update*', &-> { slim :update }
-get '*', &-> { slim :index }
-post '*/tag*', &-> { slim :tag }
+get '/tempo', &-> { slim :tempo }
+get '/metrics', &-> { slim :metrics }
+get '/logs', &-> { slim :logs }
+get '/tag', &-> { slim :tag }
+get '/journal', &-> { slim :journal }
+get '/inspect', &-> { slim :inspect }
+get '/ps', &-> { slim :ps }
+get '/update', &-> { slim :update }
+get '/insight', &-> { slim :index }
+get '/', &-> { slim :index }
+post '/tag', &-> { slim :tag }
 
 set :show_exceptions, false
 error do

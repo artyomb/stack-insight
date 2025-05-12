@@ -82,6 +82,13 @@ html
       const home = document.querySelector('a.home-link');
       home.href = BASE_PATH + '/';
 
+      const link_list = document.querySelectorAll('head link');
+      link_list.forEach(function (l) {
+        if (l.getAttribute('rel') === "stylesheet" ) {
+          l.href = BASE_PATH + l.href;
+        }
+      }
+
     == yield
 
     javascript:
