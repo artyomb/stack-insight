@@ -60,17 +60,16 @@ get '/favicon.ico' do
   content_type 'image/svg+xml'
   favicon
 end
-get '/tempo', &-> { slim :tempo }
-get '/metrics', &-> { slim :metrics }
-get '/logs', &-> { slim :logs }
-get '/tag', &-> { slim :tag }
-get '/journal', &-> { slim :journal }
-get '/inspect', &-> { slim :inspect }
-get '/ps', &-> { slim :ps }
-get '/update', &-> { slim :update }
-get '/insight', &-> { slim :index }
+get '/tempo*', &-> { slim :tempo }
+get '/metrics*', &-> { slim :metrics }
+get '/logs*', &-> { slim :logs }
+get '/tag*', &-> { slim :tag }
+get '/journal*', &-> { slim :journal }
+get '/inspect*', &-> { slim :inspect }
+get '/ps*', &-> { slim :ps }
+get '/update*', &-> { slim :update }
 get '/', &-> { slim :index }
-post '/tag', &-> { slim :tag }
+post '/tag*', &-> { slim :tag }
 
 set :show_exceptions, false
 error do
