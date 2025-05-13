@@ -8,7 +8,7 @@ require 'open3'
 require 'stack-service-base'
 require 'stack-service-base/prometheus_parser'
 
-
+ENV['PROMETHEUS_METRICS_EXPORT'] = 'false'
 use Rack.middleware_klass do |env, _app|
   env['PATH_INFO'].gsub!(/.*insight/, '')
   _app.call env
@@ -33,9 +33,9 @@ helpers do
   end
 end
 
-get '*/stack*', &-> { slim :stack }
+get '/stack*', &-> { slim :stack }
 
-get '*/logs_ws*', &-> {
+get '/logs_ws*', &-> {
   if Async::WebSocket::Adapters::Rack.websocket?(env)
     Async::WebSocket::Adapters::Rack.open(env) do |connection|
       thread = Thread.new do
