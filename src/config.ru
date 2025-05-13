@@ -8,7 +8,6 @@ require 'open3'
 require 'stack-service-base'
 require 'stack-service-base/prometheus_parser'
 
-ENV['PROMETHEUS_METRICS_EXPORT'] = 'false'
 use Rack.middleware_klass do |env, _app|
   env['PATH_INFO'].gsub!(/.*insight/, '')
   _app.call env
