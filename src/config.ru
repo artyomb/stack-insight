@@ -8,9 +8,9 @@ require 'open3'
 require 'stack-service-base'
 require 'stack-service-base/prometheus_parser'
 
-use Rack.middleware_klass do |env, _app|
+use Rack.middleware_klass do |env, app|
   env['PATH_INFO'].gsub!(/.*insight/, '')
-  _app.call env
+  app.call env
 end
 
 before do
