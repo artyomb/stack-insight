@@ -34,8 +34,8 @@ ruby:
   services = Async { otl_span(:services) { JSON `docker service ls --filter label=com.docker.stack.namespace=#{params[:stack]} --format '{{json . }}' | jq -s . 2>&1` } }
   services_i = Async { otl_span(:services_i) { JSON `docker stack services #{params[:stack]} --format '{{.Name}}' | xargs -P 10 -r -I{} docker service inspect {} --format '{{json . }}' | jq -s . 2>&1` } }
   description = Async { otl_span(:description) { `docker config inspect --format '{{json .Spec.Data}}' #{params[:stack]}_readme | jq -r . | base64 -d`.strip } }
-  tempo_page = Async { slim :tempo }
-  metrics_page = Async { slim :metrics }
+  tempo_page = Async { slim :tempo }.wait
+  metrics_page = Async { slim :metrics }.wait
 
   ps = ps.wait.first&.group_by { _1.dig 'Config', 'Labels', 'com.docker.swarm.task.id' }&.transform_values(&:first) || {}
   sps = sps.wait.group_by { _1['Name'][/(.*)\./, 1] }
@@ -186,8 +186,8 @@ pre: table
         a.action href="logs/?service=#{s['Name']}" title="Logs" L
         a.action href="update/?service=#{s['Name']}" onclick="return confirm('Are you sure to Pull and Update \n#{s['Name']}?')" title="Update" U
 
-== tempo_page.wait
-== metrics_page.wait
+== tempo_page
+== metrics_page
 
 sass:
   a
