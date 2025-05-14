@@ -19,7 +19,7 @@ ruby:
     begin
       traces_ = JSON traces, symbolize_names: true
     rescue
-      halt traces
+      next traces
     end
     traces_[:traces]&.each do |t|
       t[:spanSet][:spans]&.each do |s|
