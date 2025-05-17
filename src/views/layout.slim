@@ -1,12 +1,12 @@
 ruby:
-  dinfo = docker('info').wait
+  @dinfo = @dinfo.wait
 
 doctype html
 html
   head
     link rel="icon" type="image/svg+xml" href='data:image/svg+xml,#{favicon.gsub('"','%22').gsub("#",'%23')}'
     meta[charset="utf-8"]
-    title = dinfo['Name']
+    title = @dinfo['Name']
     meta[name="viewport" content="width=device-width, initial-scale=1.0"]
     / link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700&display=swap" rel="stylesheet"
     link href="/fonts/jet_brains_mono.css" rel="stylesheet"
@@ -69,8 +69,8 @@ html
     nav style="display: flex; justify-content: space-between; padding: 1em;"
       a.home-link href="#" #Home
       .name
-        |  #{dinfo['Name']} (#{dinfo['OperatingSystem']})
-        |  #{dinfo['NCPU']}:CPU, #{dinfo['MemTotal'].to_i / (1024*1024*1024) }:RAM, #{dinfo.dig('Swarm', 'Nodes')}:Nodes
+        |  #{@dinfo['Name']} (#{@dinfo['OperatingSystem']})
+        |  #{@dinfo['NCPU']}:CPU, #{@dinfo['MemTotal'].to_i / (1024*1024*1024) }:RAM, #{@dinfo.dig('Swarm', 'Nodes')}:Nodes
       .right
         span.version = "v" + (ENV['ORG_OPENCONTAINERS_IMAGE_VERSION'] || '<local run>')
         span = Time.now

@@ -16,6 +16,7 @@ end
 before do
   @calc_size = ENV['CONTAINER_SIZE'] == 'false' ? '--size=false' : ''
   @calc_size_inspect = ENV['CONTAINER_SIZE'] == 'false' ? '' : '-s'
+  @dinfo = docker('info')
 end
 
 StackServiceBase.rack_setup self
@@ -35,7 +36,11 @@ helpers do
     Async do
       otl_span(api) do
         cmd = "curl -s --unix-socket /var/run/docker.sock http://localhost/#{api}"
-        response = `docker run --rm --privileged --pid=host alpine:edge nsenter -t 1 -m -u -n -i #{cmd} 2>&1`
+        if ENV['RACK_ENV'] == 'production'
+          response = `#{cmd} 2>&1`
+        else
+          response = `docker run --rm --privileged --pid=host alpine:edge nsenter -t 1 -m -u -n -i #{cmd} 2>&1`
+        end
         JSON response, symbolize_key: true
       end
     end
