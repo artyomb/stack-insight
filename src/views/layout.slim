@@ -1,5 +1,5 @@
 ruby:
-  dinfo = JSON `docker info --format "{{json .}}"`
+  dinfo = docker('info').wait
 
 doctype html
 html

@@ -30,6 +30,16 @@ helpers do
       </svg>
     SVG
   end
+
+  def docker(api)
+    Async do
+      otl_span(api) do
+        cmd = "curl -s --unix-socket /var/run/docker.sock http://localhost/#{api}"
+        response = `docker run --rm --privileged --pid=host alpine:edge nsenter -t 1 -m -u -n -i #{cmd} 2>&1`
+        JSON response, symbolize_key: true
+      end
+    end
+  end
 end
 
 get '/stack*', &-> { slim :stack }
