@@ -32,10 +32,8 @@ ruby:
   ps = Async { otl_span(:ps) { JSON `docker ps #{@calc_size} --filter "label=com.docker.stack.namespace=#{params[:stack]}" --format '{{.ID}}' | xargs -r docker inspect #{@calc_size_inspect} 2>&1 | jq -s ` } }
   sps = Async { otl_span(:sps) { JSON `docker stack ps #{params[:stack]} --no-trunc --format "{{json .}}" | jq --arg stack "{}" '. + {Stack: $stack}' | jq -s . 2>&1` } }
   services = Async { otl_span(:services) { JSON `docker service ls --filter label=com.docker.stack.namespace=#{params[:stack]} --format '{{json . }}' | jq -s . 2>&1` } }
-  services_i = Async { otl_span(:services_i) { JSON `docker stack services #{params[:stack]} --format '{{.Name}}' | xargs -P 10 -r -I{} docker service inspect {} --format '{{json . }}' | jq -s . 2>&1` } }
+  services_i = Async { otl_span(:services_i) { JSON `docker stack services #{params[:stack]} --format '{{.Name}}' | xargs -r -I{} docker service inspect {} --format '{{json . }}' | jq -s . 2>&1` } }
   description = Async { otl_span(:description) { `docker config inspect --format '{{json .Spec.Data}}' #{params[:stack]}_readme | jq -r . | base64 -d`.strip } }
-  tempo_page = Async { slim :tempo }.wait
-  metrics_page = Async { slim :metrics }.wait
 
   ps = ps.wait.first&.group_by { _1.dig 'Config', 'Labels', 'com.docker.swarm.task.id' }&.transform_values(&:first) || {}
   sps = sps.wait.group_by { _1['Name'][/(.*)\./, 1] }
@@ -186,8 +184,8 @@ pre: table
         a.action href="logs/?service=#{s['Name']}" title="Logs" L
         a.action href="update/?service=#{s['Name']}" onclick="return confirm('Are you sure to Pull and Update \n#{s['Name']}?')" title="Update" U
 
-== tempo_page
-== metrics_page
+== slim :tempo
+== slim :metrics
 
 sass:
   a
