@@ -132,19 +132,19 @@ ruby:
 
       con = s.dig('Spec', 'TaskTemplate', 'ContainerSpec')
       if con
-        labels = spec['Labels']
-        port = labels.find { |l,v| l =~ /traefik.*.loadbalancer.server.port/ }
-        if port
-          otl_span(:metrics) {
-            port = port.last.to_i
-            metrics_txt = `docker exec #{task['Status']['ContainerStatus']['ContainerID']} curl -f -q localhost:#{port}/metrics`
-            if metrics_txt.lines.first =~ /^# TYPE/
-              metrics = PrometheusParser.parse_metrics(metrics_txt)
-              rps = metrics[:http_server_request_duration_seconds][:series].map { |s| [ s[:labels][:path], s[:sum]/s[:count] ] }
-              s['RPS'] = rps.map { |r| r[1] }.max&.round(4) || 0
-            end
-          }
-        end
+        #labels = spec['Labels']
+        #port = labels.find { |l,v| l =~ /traefik.*.loadbalancer.server.port/ }
+        #if port
+        #  otl_span(:metrics) {
+        #    port = port.last.to_i
+        #    metrics_txt = `docker exec #{task['Status']['ContainerStatus']['ContainerID']} curl -f -q localhost:#{port}/metrics`
+        #    if metrics_txt.lines.first =~ /^# TYPE/
+        #      metrics = PrometheusParser.parse_metrics(metrics_txt)
+        #      rps = metrics[:http_server_request_duration_seconds][:series].map { |s| [ s[:labels][:path], s[:sum]/s[:count] ] }
+        #      s['RPS'] = rps.map { |r| r[1] }.max&.round(4) || 0
+        #    end
+        #  }
+        #end
 
         if task['Status']['State'] == 'running'
           image = $container_images_cache[con['Image']] ||= JSON(`docker image inspect #{con['Image']}`)[0]
