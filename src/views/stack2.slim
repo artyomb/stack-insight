@@ -1,0 +1,250 @@
+ruby:
+  tempo_page = Async{ slim :tempo}
+  metrics_page = Async { slim :metrics }
+
+ruby:
+  otl_current_span { _1.add_attributes stack: params[:stack] }
+
+  service_errors = Async do
+    otl_span(:espans) {
+      _range = 60 * 60
+      ps = Async { JSON `docker ps #{@calc_size} --filter "label=com.docker.swarm.service.name=grafana_grafana" --format '{{.ID}}' | xargs -r docker inspect #{@calc_size_inspect} 2>&1 | jq -s ` }
+      ps = ps.wait.first&.group_by { _1.dig 'Config', 'Labels', 'com.docker.swarm.task.id' }&.transform_values(&:first) || {}
+      service_errors_ = Hash.new(0)
+
+      con = ps.first.last
+      if con
+        query = { q: %[{ resource.deployment.environment="#{params[:stack]}" && name=~".*" &&  status=error}],
+                  start: (Time.now - _range).to_i, end: Time.now.to_i, limit: 200, spss: 1 }
+        traces = `docker exec #{con['Id']} curl -G -s  http://tempo:3200/api/search  #{ query.map { |k, v| "--data-urlencode '#{k}=#{v}' " }.join ' ' } 2>&1`
+        traces_ = JSON traces, symbolize_names: true rescue traces
+        traces_[:traces]&.each do |t|
+          t[:serviceStats]&.each do |name, s|
+            if s[:errorCount].to_i > 0
+              service_errors_[name] += s[:errorCount]
+            end
+          end
+        end
+        service_errors_
+      end
+    }
+  rescue =>e
+    Hash.new(0)
+  end
+
+  $container_images_cache ||= {}
+
+  tasks = docker %(tasks?filters={"label":["com.docker.stack.namespace=#{params[:stack]}"]})
+  ps = docker %(containers/json?filters={"label":["com.docker.stack.namespace=#{params[:stack]}"]}&size=1)
+  services = docker %(services?filters={"label":["com.docker.stack.namespace=#{params[:stack]}"]})
+  description = docker "configs/#{params[:stack]}_readme"
+  @dinfo = @dinfo.wait if @dinfo.class == Async::Task
+
+  description = Base64.decode64 description.wait.dig('Spec', 'Data') rescue ''
+
+  tasks = tasks.wait
+  tasks = tasks.group_by { _1['ServiceID'] }
+  tasks.transform_values { |a| a.sort_by! { Time.parse _1['UpdatedAt'] }.reverse! }
+
+  services = services.wait
+  services.each { |s|
+    s['Name'] = s['Spec']['Name']
+    s['NameT'] = s['Spec']['Name'].gsub(/^[^_]+_/, &->(s) { "<span class='stack_name'>#{s}</span>" })
+    s['CurrentState'] = tasks[s['ID']]&.first['Status']['State'] rescue 'n/a'
+    s['Running'] = tasks[s['ID']]&.first['CreatedAt']
+    s['TdKlassRunning'] = 'time'
+
+    s['Replicas'] += ' g' if s['Spec']['Mode'] == 'global'
+    s['TitleImage'] = s.dig('Spec', 'TaskTemplate', 'ContainerSpec', 'Image')
+    s['Image'] = s.dig('Spec', 'TaskTemplate', 'ContainerSpec', 'Image')[/^(?:(?<domain>[^\/]+\.[^\/]+(?::\d+)?)[\/])?(?<name>.+)$/, 2] || ''
+    s['Image'].gsub!(/@sha256:.*/, '')
+    s['Image'] = s['Image'].gsub(/:([^:]+)$/, ':<span class="label">\1</span>') unless s['Image'] =~ /span/
+  }.sort_by! { |s| s['Name'] }
+
+  ps = ps.wait
+  ps.each { |c|
+    c['ID'] = c['Id'][0..12]
+    c['Image'] = c['Image'].gsub(/@sha256:.*/, &->(s) { "<span class='sha256'>#{s}</span>" })
+    c['Names'] = c['Names'].map { |n| n.gsub(/\.\d+\..*/, &->(s) { "<span class='container_name'>#{s}</span>" }) }.join ','
+  }
+
+  number_to_human_size = ->(i) {
+    units = %w[B KB MB GB TB PB]
+    size = i.to_f
+    unit = 0
+
+    while size > 1024 && unit < units.size - 1
+      size /= 1024
+      unit += 1
+    end
+
+    "#{size.round(2).to_s.sub(/\.?0+$/, '')} #{units[unit]}"
+  }
+
+  service_errors = service_errors.wait
+
+  columns = %w[NameT Image Image\ Age Version Commit Replicas RPS ESpans Container\ Size Running]
+  services.map { |s|
+    Async do
+      spec = s['Spec']
+      ts = tasks[s['ID']]
+      task, task_prev = ts[0..1]
+      next unless task
+
+      s['ESpans'] = service_errors[s['Name'].to_sym]
+      if s['ESpans'].to_i > 0
+        s['TdKlassESpans'] = 'error'
+      else
+        s['ESpans'] = ''
+      end
+
+      s['Restart Condition'] = spec.dig 'TaskTemplate', 'RestartPolicy', 'Condition'
+      s['Restart Condition'] ||= 'any'
+      if s.dig('Spec', 'Mode').key? 'Global'
+        rd = @dinfo.dig 'Swarm', 'Nodes'
+      else
+        rd = s.dig('Spec', 'Mode', 'Replicated', 'Replicas')
+      end
+
+      r = ts.select { _1.dig('Status', 'State') == 'running' }.count
+
+      s['Replicas'] = "#{r}/#{rd}"
+
+      if r.to_i == 0 && s['Restart Condition'] == 'on-failure'
+        s['Klass'] = 'not_running'
+      end
+
+      if !task_prev || task_prev.dig('Status', 'State') == 'failed'
+        if r != rd
+          s['Klass'] = 'error_prev'
+          s['CurrentState'] += ' > ' + task_prev.dig('Status', 'Message')
+        end
+      end
+
+      #unless task.dig('Status', 'State')&.empty?
+      #  s['Klass'] = 'error'
+      #  s['CurrentState'] = task.dig('Status', 'State')
+      #end
+
+      s['Replicas'] ||= ''
+      s['Replicas'] += ' g' if s.dig('Spec', 'Mode').key? 'Global'
+      s['Replicas'] += ' :' + s['Restart Condition'].to_s
+
+      con = s.dig('Spec', 'TaskTemplate', 'ContainerSpec')
+      if con
+        labels = spec['Labels']
+        port = labels.find { |l,v| l =~ /traefik.*.loadbalancer.server.port/ }
+        if port
+          otl_span(:metrics) {
+            port = port.last.to_i
+            metrics_txt = `docker exec #{task['Status']['ContainerStatus']['ContainerID']} curl -f -q localhost:#{port}/metrics`
+            if metrics_txt.lines.first =~ /^# TYPE/
+              metrics = PrometheusParser.parse_metrics(metrics_txt)
+              rps = metrics[:http_server_request_duration_seconds][:series].map { |s| [ s[:labels][:path], s[:sum]/s[:count] ] }
+              s['RPS'] = rps.map { |r| r[1] }.max&.round(4) || 0
+            end
+          }
+        end
+
+        if task['Status']['State'] == 'running'
+          image = $container_images_cache[con['Image']] ||= JSON(`docker image inspect #{con['Image']}`)[0]
+          unless image
+            p 1
+          end
+          c_digests = image['RepoDigests'].map { |d| d[/sha256:.{64}/] }
+          version = image.dig('Config', 'Labels', 'org.opencontainers.image.version')
+          i_created = image['Created']
+
+          created = Time.parse task['CreatedAt']
+          if ( Time.now.utc - created.utc < 60*60*6) && s['Klass'].nil?
+            s['Klass'] = 'new'
+          end
+
+          s['Image Age'] = con.dig 'Labels', 'org.opencontainers.image.created'
+          s['Image Age'] ||= i_created
+          s['TdKlassImage Age'] = 'time'
+
+          s['Version'] = image.dig('Config', 'Labels', 'org.opencontainers.image.version') ||
+                         image.dig('Config', 'Labels', 'org.label-schema.version')
+
+          s['LinkVersion'] = image.dig('Config', 'Labels', 'com.gitlab.ci.pipelineurl')
+
+          s['LinkVersion'] ||= image.dig('Config', 'Labels', 'org.opencontainers.image.source')
+
+          s['Version'] ||= 'n/a' if s['LinkVersion']
+
+          s['Commit'] = image.dig('Config', 'Labels', 'com.gitlab.ci.commit_message')
+
+          container = ps.find{ _1['Id'] == task['Status']['ContainerStatus']['ContainerID'] }
+          s['Container Size'] = container&.dig('SizeRw') # "SizeRw": 16828757,    "SizeRootFs" : 328033441,
+          s['Container Size'] = number_to_human_size.call s['Container Size']
+        else
+          s['Version'] = ''
+        end
+      end
+
+      #s['Networks'] = con.dig('NetworkSettings', 'Networks').keys.join(', ') if con
+      # com.gitlab.ci.pipelineurl
+    rescue =>e
+      s['Error'] = e.message
+      puts "Exception: services.map Async >> #{s['Name']} : #{e.message}\n, #{e.backtrace.join("\n")}"
+    end
+  }.map(&:wait)
+
+h1 Stack: #{params[:stack]}
+pre.description = description
+
+pre: table
+  - columns.each do |k|
+    th = k
+  th Actions
+  - services.each do |s|
+    tr class=s['Klass']
+      - if s['Error']
+        td = s['Error']
+      - columns.each do |c|
+        td class=(c.downcase + ' ' + s["TdKlass#{c}"].to_s) title=s["Title#{c}"]
+          -if s["Link#{c}"]
+            a href=s["Link#{c}"] == s[c]
+          - else
+            == s[c]
+      td
+        a.action href="ps/?service=#{s['Name']}" title="ps" P
+        a.action href="inspect/?service=#{s['Name']}" title="Inspect" I
+        a.action href="logs/?service=#{s['Name']}" title="Logs" L
+        a.action href="update/?service=#{s['Name']}" onclick="return confirm('Are you sure to Pull and Update \n#{s['Name']}?')" title="Update" U
+
+== tempo_page.wait
+== metrics_page.wait
+
+sass:
+  a
+    color: #2e54b9
+    text-decoration: none
+    &:hover
+      text-decoration: underline
+
+  span.label
+    background: #bfe3e8
+    border-radius: 5px
+    padding: 0 0.3em
+  .currentstate
+    max-width: 15em
+  tr.not_running
+    background: rgba(182, 182, 182, 0.2)
+  tr.new
+    background: rgba(116, 255, 31, 0.15)
+  tr.error
+    background: rgba(255, 0, 0, 0.15)
+  td.error
+    background: #ff00008f
+  tr.error_prev
+    background: rgba(255, 0, 0, 0.07)
+  .time
+    //span
+    //  margin-left: 1em
+    .old
+      opacity: 0.4
+    .recent
+      background: #fff80026
+

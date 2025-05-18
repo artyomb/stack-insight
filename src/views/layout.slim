@@ -1,5 +1,5 @@
 ruby:
-  @dinfo = @dinfo.wait
+  @dinfo = @dinfo.wait if @dinfo.class == Async::Task
 
 doctype html
 html

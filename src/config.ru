@@ -34,18 +34,25 @@ helpers do()
   def docker(api)
     Async do
       otl_span(api) do
-        cmd = "curl -s --unix-socket /var/run/docker.sock http://localhost/#{api}"
-        if ENV['RACK_ENV'] == 'production'
-          response = `#{cmd} 2>&1`
-        else
-          response = `docker run --rm --privileged --pid=host alpine:edge nsenter -t 1 -m -u -n -i #{cmd} 2>&1`
-        end
-        JSON response, symbolize_key: true
+        path, params_str = api.split('?')
+        params = params_str.to_s.split('&')
+        cmd = [
+          "curl -s -G --unix-socket /var/run/docker.sock",
+          *params.map { |p| "--data-urlencode '#{p}'" },
+          "http://localhost/#{path}"
+        ].join(' ')
+
+        response = ENV['RACK_ENV'] == 'production' ?
+          `#{cmd} 2>&1` :
+          `docker run --rm --privileged --pid=host alpine:edge nsenter -t 1 -m -u -n -i #{cmd} 2>&1`
+
+        JSON(response, symbolize_key: true)
       end
     end
   end
 end
 
+get '/stack2*', &-> { slim :stack2 }
 get '/stack*', &-> { slim :stack }
 
 get '/logs_ws*', &-> {
