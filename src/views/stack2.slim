@@ -1,6 +1,6 @@
 ruby:
-  tempo_page = Async{ slim :tempo}
-  metrics_page = Async { slim :metrics }
+  tempo_page = Async{ otl_span(:tempo_page) { slim :tempo } }
+  metrics_page = Async { otl_span(:metrics_page) { slim :metrics } }
 
 ruby:
   otl_current_span { _1.add_attributes stack: params[:stack] }
