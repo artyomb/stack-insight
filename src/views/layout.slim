@@ -135,12 +135,11 @@ html
       formatTime();
 
       document.querySelectorAll('[data-url]').forEach(el => {
-        const url = el.dataset.url
+        const url = BASE_PATH + el.dataset.url
         fetch(url).then(res => res.text()).then(text => {
           el.innerHTML = text
           el.classList.add('loaded')
           formatTime()
         })
       })
-
 
