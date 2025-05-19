@@ -1,9 +1,8 @@
 ruby:
-  tempo_page = Async{ otl_span(:tempo_page) { slim :tempo } }
-  metrics_page = Async { otl_span(:metrics_page) { slim :metrics } }
-
-ruby:
   otl_current_span { _1.add_attributes stack: params[:stack] }
+
+  tempo_page = Async { otl_span(:tempo_page) { slim :tempo } }
+  metrics_page = Async { otl_span(:metrics_page) { slim :metrics } }
 
   service_errors = Async do
     otl_span(:espans) {
@@ -41,6 +40,8 @@ ruby:
   @dinfo = @dinfo.wait if @dinfo.class == Async::Task
 
   description = Base64.decode64 description.wait.dig('Spec', 'Data') rescue ''
+  tempo_page = tempo_page.wait
+  metrics_page = metrics_page.wait
 
   tasks = tasks.wait
   tasks = tasks.group_by { _1['ServiceID'] }
@@ -214,8 +215,8 @@ pre: table
         a.action href="logs/?service=#{s['Name']}" title="Logs" L
         a.action href="update/?service=#{s['Name']}" onclick="return confirm('Are you sure to Pull and Update \n#{s['Name']}?')" title="Update" U
 
-== tempo_page.wait
-== metrics_page.wait
+== tempo_page
+== metrics_page
 
 sass:
   a
