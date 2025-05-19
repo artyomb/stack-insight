@@ -1,11 +1,5 @@
 ruby:
   @dinfo = @dinfo.wait if @dinfo.class == Async::Task
-  limits = `curl --head -H "Authorization: Bearer $(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq -r .token)" https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest`
-  limits = limits.split("\n").map(&:strip).reject{ _1.empty? || _1=~ /HTTP/} .map { |l| l.split(': ') }.to_h.transform_keys(&:to_sym)
-  limit_period = limits[:"ratelimit-limit"].split(';').at(1)
-  limit = limits[:"ratelimit-limit"].split(';').first.to_i
-  remaining = limits[:"ratelimit-remaining"].split(';').first.to_i
-  source = limits[:"docker-ratelimit-source"]
 
 doctype html
 html
@@ -77,7 +71,7 @@ html
       .name
         |  #{@dinfo['Name']} (#{@dinfo['OperatingSystem']})
         |  #{@dinfo['NCPU']}:CPU, #{@dinfo['MemTotal'].to_i / (1024*1024*1024) }:RAM, #{@dinfo.dig('Swarm', 'Nodes')}:Nodes
-        span.limits == ", pull limit:  #{remaining}/#{limit}, <span>#{limit_period}</span> #{source}"
+        span data-url="/partial_rate_limits"
       .right
         span.version = "v" + (ENV['ORG_OPENCONTAINERS_IMAGE_VERSION'] || '<local run>')
         span = Time.now

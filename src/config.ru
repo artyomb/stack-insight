@@ -83,6 +83,7 @@ end
 get '/partial_stack*', &-> { slim :stack2, layout: false }
 get '/partial_tempo*', &-> { slim :tempo, layout: false }
 get '/partial_metrics*', &-> { slim :metrics, layout: false }
+get '/partial_rate_limits*', &-> { slim :rate_limits, layout: false }
 get '/logs*', &-> { slim :logs }
 get '/tag*', &-> { slim :tag }
 get '/journal*', &-> { slim :journal }
