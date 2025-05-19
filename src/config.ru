@@ -52,8 +52,8 @@ helpers do()
   end
 end
 
-get '/stack2*', &-> { slim :stack2 }
-get '/stack*', &-> { slim :stack }
+get '/stack2*', &-> { slim :stack }
+get '/stack*', &-> { slim :stack2 }
 
 get '/logs_ws*', &-> {
   if Async::WebSocket::Adapters::Rack.websocket?(env)
