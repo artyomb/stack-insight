@@ -92,40 +92,55 @@ html
     == yield
 
     javascript:
-      const list = document.querySelectorAll('.created, .time');
-      list.forEach(function (e) {
-        if (!e.innerText) return;
+      function formatTime() {
+        const list = document.querySelectorAll('.created:not(.processed), .time:not(.processed)');
+        list.forEach(function (e) {
+          if (!e.innerText) return;
+          e.classList.add('processed');
 
-        const t = new Date(e.innerText);
-        const now = new Date();
-        const diffSeconds = Math.floor((now - t) / 1000);
-        e.innerText = '';
+          const t = new Date(e.innerText);
+          const now = new Date();
+          const diffSeconds = Math.floor((now - t) / 1000);
+          e.innerText = '';
 
-        let local_time = e.appendChild(document.createElement('span'));
-        local_time.classList.add('local_time');
+          let local_time = e.appendChild(document.createElement('span'));
+          local_time.classList.add('local_time');
 
-        local_time.innerText = t.toLocaleString('en-US', {
-          year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+          local_time.innerText = t.toLocaleString('en-US', {
+            year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+          });
+
+          const timeUnits = [[86400, 'd'], [3600, 'h'], [60, 'm'], [1, 's']];
+
+          let remaining = diffSeconds;
+          const ago = timeUnits.reduce((acc, [sec, unit]) => {
+            const val = Math.floor(remaining / sec);
+            remaining %= sec;
+            if (val === 0) return acc;
+            if (sec === 60 && diffSeconds >= 86400) return acc;
+            if (sec === 1 && diffSeconds >= 86400) return acc;
+            return acc + val + unit + ' ';
+          }, '').trim();
+
+          let ago_span = e.appendChild(document.createElement('span'));
+          ago_span.setAttribute('title', local_time.innerText);
+          if (diffSeconds < 86400)
+            ago_span.classList.add('recent');
+          else
+            ago_span.classList.add('old');
+
+          ago_span.innerText = `${ago}`;
         });
+      }
+      formatTime();
 
-        const timeUnits = [[86400, 'd'], [3600, 'h'], [60, 'm'], [1, 's']];
+      document.querySelectorAll('[data-url]').forEach(el => {
+        const url = el.dataset.url
+        fetch(url).then(res => res.text()).then(text => {
+          el.innerHTML = text
+          el.classList.add('loaded')
+          formatTime()
+        })
+      })
 
-        let remaining = diffSeconds;
-        const ago = timeUnits.reduce((acc, [sec, unit]) => {
-          const val = Math.floor(remaining / sec);
-          remaining %= sec;
-          if (val === 0) return acc;
-          if (sec === 60 && diffSeconds >= 86400) return acc;
-          if (sec === 1 && diffSeconds >= 86400) return acc;
-          return acc + val + unit + ' ';
-        }, '').trim();
 
-        let ago_span = e.appendChild(document.createElement('span'));
-        ago_span.setAttribute('title', local_time.innerText);
-        if (diffSeconds < 86400)
-          ago_span.classList.add('recent');
-        else
-          ago_span.classList.add('old');
-
-        ago_span.innerText = `${ago}`;
-      });

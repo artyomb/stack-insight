@@ -53,7 +53,7 @@ helpers do()
 end
 
 get '/stack2*', &-> { slim :stack }
-get '/stack*', &-> { slim :stack2 }
+get '/stack*', &-> { slim :stack_main }
 
 get '/logs_ws*', &-> {
   if Async::WebSocket::Adapters::Rack.websocket?(env)
@@ -80,8 +80,9 @@ get '/favicon.ico' do
   content_type 'image/svg+xml'
   favicon(@dinfo.wait)
 end
-get '/tempo*', &-> { slim :tempo }
-get '/metrics*', &-> { slim :metrics }
+get '/partial_stack*', &-> { slim :stack2, layout: false }
+get '/partial_tempo*', &-> { slim :tempo, layout: false }
+get '/partial_metrics*', &-> { slim :metrics, layout: false }
 get '/logs*', &-> { slim :logs }
 get '/tag*', &-> { slim :tag }
 get '/journal*', &-> { slim :journal }

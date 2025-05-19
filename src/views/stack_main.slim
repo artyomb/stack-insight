@@ -1,0 +1,35 @@
+.main data-url="/partial_stack?stack=#{params[:stack]}" Loading...
+.tempo data-url="/partial_tempo?stack=#{params[:stack]}" Loading...
+.metrics data-url="/partial_metrics?stack=#{params[:stack]}" Loading...
+
+sass:
+  a
+    color: #2e54b9
+    text-decoration: none
+    &:hover
+      text-decoration: underline
+
+  span.label
+    background: #bfe3e8
+    border-radius: 5px
+    padding: 0 0.3em
+  .currentstate
+    max-width: 15em
+  tr.not_running
+    background: rgba(182, 182, 182, 0.2)
+  tr.new
+    background: rgba(116, 255, 31, 0.15)
+  tr.error
+    background: rgba(255, 0, 0, 0.15)
+  td.error
+    background: #ff00008f
+  tr.error_prev
+    background: rgba(255, 0, 0, 0.07)
+  .time
+    //span
+    //  margin-left: 1em
+    .old
+      opacity: 0.4
+    .recent
+      background: #fff80026
+

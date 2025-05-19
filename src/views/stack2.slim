@@ -1,9 +1,4 @@
 ruby:
-  otl_current_span { _1.add_attributes stack: params[:stack] }
-
-  tempo_page = Async { otl_span(:tempo_page) { slim :tempo } }
-  metrics_page = Async { otl_span(:metrics_page) { slim :metrics } }
-
   service_errors = Async do
     otl_span(:espans) {
       _range = 60 * 60
@@ -40,8 +35,6 @@ ruby:
   @dinfo = @dinfo.wait if @dinfo.class == Async::Task
 
   description = Base64.decode64 description.wait.dig('Spec', 'Data') rescue ''
-  tempo_page = tempo_page.wait
-  metrics_page = metrics_page.wait
 
   tasks = tasks.wait
   tasks = tasks.group_by { _1['ServiceID'] }
@@ -214,38 +207,4 @@ pre: table
         a.action href="inspect/?service=#{s['Name']}" title="Inspect" I
         a.action href="logs/?service=#{s['Name']}" title="Logs" L
         a.action href="update/?service=#{s['Name']}" onclick="return confirm('Are you sure to Pull and Update \n#{s['Name']}?')" title="Update" U
-
-== tempo_page
-== metrics_page
-
-sass:
-  a
-    color: #2e54b9
-    text-decoration: none
-    &:hover
-      text-decoration: underline
-
-  span.label
-    background: #bfe3e8
-    border-radius: 5px
-    padding: 0 0.3em
-  .currentstate
-    max-width: 15em
-  tr.not_running
-    background: rgba(182, 182, 182, 0.2)
-  tr.new
-    background: rgba(116, 255, 31, 0.15)
-  tr.error
-    background: rgba(255, 0, 0, 0.15)
-  td.error
-    background: #ff00008f
-  tr.error_prev
-    background: rgba(255, 0, 0, 0.07)
-  .time
-    //span
-    //  margin-left: 1em
-    .old
-      opacity: 0.4
-    .recent
-      background: #fff80026
 
