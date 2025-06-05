@@ -47,6 +47,8 @@ helpers do()
           `docker run --rm --privileged --pid=host alpine:edge nsenter -t 1 -m -u -n -i #{cmd} 2>&1`
 
         JSON(response, symbolize_key: true)
+      rescue => e
+        raise "Exception: #{response}"
       end
     end
   end
