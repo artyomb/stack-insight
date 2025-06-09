@@ -8,8 +8,8 @@ ruby:
 
       con = ps.first.last
       if con
-        query = { q: %[{ resource.deployment.environment="#{params[:stack]}" && name=~".*" &&  status=error}],
-                  start: (Time.now - _range).to_i, end: Time.now.to_i, limit: 200, spss: 1 }
+        query = { q: %[{ resource.deployment.environment="#{params[:stack]}" && event:name = "exception" } | select( kind, status, resource.service.name, event.exception.message ) ],
+                  start: (Time.now - _range).to_i, end: Time.now.to_i, limit: 200, spss: 10 }
         traces = `docker exec #{con['Id']} curl -G -s  http://tempo:3200/api/search  #{ query.map { |k, v| "--data-urlencode '#{k}=#{v}' " }.join ' ' } 2>&1`
         traces_ = JSON traces, symbolize_names: true rescue traces
         traces_[:traces]&.each do |t|
