@@ -153,7 +153,7 @@ ruby:
           unless image
             p 1
           end
-          c_digests = image['RepoDigests'].map { |d| d[/sha256:.{64}/] }
+          c_digests = image['RepoDigests'].map { |d| d[/sha256:.{64}/] } rescue 'n/a'
           version = image.dig('Config', 'Labels', 'org.opencontainers.image.version')
           i_created = image['Created']
 
