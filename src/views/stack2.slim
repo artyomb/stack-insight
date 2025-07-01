@@ -89,7 +89,7 @@ ruby:
   services.map { |s|
     Async do
       spec = s['Spec']
-      ts = tasks[s['ID']]
+      ts = s['Tasks'] = tasks[s['ID']]
       task, task_prev = ts[0..1]
       next unless task
 
@@ -177,7 +177,7 @@ ruby:
 
           s['Commit'] = image.dig('Config', 'Labels', 'com.gitlab.ci.commit_message')
 
-          container = ps.find{ _1['Id'] == task['Status']['ContainerStatus']['ContainerID'] }
+          container = s['container'] = ps.find{ _1['Id'] == task['Status']['ContainerStatus']['ContainerID'] }
           s['Container Size'] = container&.dig('SizeRw') # "SizeRw": 16828757,    "SizeRootFs" : 328033441,
           s['Container Size'] = number_to_human_size.call s['Container Size']
         else
@@ -211,6 +211,7 @@ pre: table
           - else
             == s[c]
       td
+        a.action href="ttyd/#{s.dig('container', 'ID')}" title="Terminal" T
         a.action href="ps/?service=#{s['Name']}" title="ps" P
         a.action href="inspect/?service=#{s['Name']}" title="Inspect" I
         a.action href="logs/?service=#{s['Name']}" title="Logs" L
