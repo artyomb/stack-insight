@@ -21,26 +21,28 @@ class ServerTtyd < Sinatra::Base
       raise 'No available ports in range 8000-9000'
     end
 
-    def start_ttyd(cid)
+    otl_def def start_ttyd(cid)
       ttyd = $cid2thread[cid]
       return ttyd unless ttyd.nil? || ttyd[:thread].nil?
 
       thrd = Thread.new do
         port = new_port
         logs = []
-        $cid2thread[cid] = { thread: thrd, cid:, port:, logs: }
-        Open3.popen3("ttyd -p #{port} -W docker exec -it #{cid} bash") do |stdin, stdout, stderr, wait_thr|
-        # Open3.popen3("ttyd -p #{port} -W ssh swarm") do |stdin, stdout, stderr, wait_thr|
-           $cid2thread[cid][:wait_thr] = wait_thr
-           stdin.close
-           while line = stdout.gets; logs << line end
-           while line = stderr.gets; logs << line end
-           wait_thr.join
-           return_value = wait_thr.value
+        otl_span "ttyd cid: #{cid}, port: #{port}", { cid: , port: } do
+          $cid2thread[cid] = { thread: thrd, cid:, port:, logs: }
+          Open3.popen3("ttyd -p #{port} -W docker exec -it #{cid} bash") do |stdin, stdout, stderr, wait_thr|
+            # Open3.popen3("ttyd -p #{port} -W ssh swarm") do |stdin, stdout, stderr, wait_thr|
+            $cid2thread[cid][:wait_thr] = wait_thr
+            stdin.close
+            while line = stdout.gets; logs << line end
+            while line = stderr.gets; logs << line end
+            wait_thr.join
+            return_value = wait_thr.value
 
-           $cid2thread[cid][:exit_code] = return_value.exitstatus
+            $cid2thread[cid][:exit_code] = return_value.exitstatus
+          end
+          puts "ttyd process for container #{cid} exited with code #{$cid2thread[cid][:exit_code]}"
         end
-        puts "ttyd process for container #{cid} exited with code #{$cid2thread[cid][:exit_code]}"
       ensure
         if $cid2thread[:cid]
           Process.kill("KILL",$cid2thread[:cid][:wait_thr].pid)
