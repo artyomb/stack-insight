@@ -8,7 +8,7 @@ RUN echo 'gem: --no-document' >> ~/.gemrc
 
 WORKDIR /app
 
-RUN cd / && git clone https://github.com/tsl0922/ttyd.git # apt-get install -y build-essential cmake git libjson-c-dev libwebsockets-dev
+RUN cd / && git clone -b 1.7.7 https://github.com/tsl0922/ttyd.git # apt-get install -y build-essential cmake git libjson-c-dev libwebsockets-dev
 RUN cd /ttyd && mkdir build && cd build && cmake .. && make # COPY /ttyd/build/ttyd, /usr/lib/x86_64-linux-gnu/libuv.so.1
 
 COPY Gemfile* /app/
@@ -18,7 +18,7 @@ RUN bundle install --jobs $(nproc) --retry=3 && \
 
 FROM ruby:3.3.1-slim-bookworm AS deploy
 RUN apt update && apt install --fix-missing -y bash curl libpq-dev openssh-client \
-      libssl-dev docker.io jq libwebsockets\
+      libssl-dev docker.io jq libwebsockets-dev\
      && rm -rf /var/lib/apt/lists/*
 
 COPY --from=base /usr/local/bundle /usr/local/bundle
@@ -26,6 +26,7 @@ COPY --from=base /usr/lib/x86_64-linux-gnu/libuv.so.1 /usr/lib/x86_64-linux-gnu/
 # E: lws_create_context: unable to load evlib plugin evlib_uv
 # E: libwebsockets context creation failed
 COPY --from=base /ttyd/build/ttyd /usr/local/bin
+# RUN ttyd -p 8000 bash
 
 COPY . /app
 
