@@ -18,11 +18,13 @@ RUN bundle install --jobs $(nproc) --retry=3 && \
 
 FROM ruby:3.3.1-slim-bookworm AS deploy
 RUN apt update && apt install --fix-missing -y bash curl libpq-dev openssh-client \
-      libssl-dev docker.io jq \
+      libssl-dev docker.io jq libwebsockets\
      && rm -rf /var/lib/apt/lists/*
 
 COPY --from=base /usr/local/bundle /usr/local/bundle
 COPY --from=base /usr/lib/x86_64-linux-gnu/libuv.so.1 /usr/lib/x86_64-linux-gnu/libuv.so.1
+# E: lws_create_context: unable to load evlib plugin evlib_uv
+# E: libwebsockets context creation failed
 COPY --from=base /ttyd/build/ttyd /usr/local/bin
 
 COPY . /app
