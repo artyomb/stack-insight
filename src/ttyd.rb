@@ -13,9 +13,7 @@ class ServerTtyd < Sinatra::Base
     def new_port
       port = 8000
       while port <= 8010
-        return port unless $cid2thread.values
-                                      .reject { |t| t[:tread].nil? }
-                                      .any? { |info| info[:port] == port }
+        return port unless $cid2thread.values.any? { |info| info[:port] == port }
         port += 1
       end
       raise 'No available ports in range 8000-9000'
@@ -29,7 +27,7 @@ class ServerTtyd < Sinatra::Base
 
       thrd = Thread.new do
         path = 'sh'
-        path = 'bash' if system("docker exec #{cid} ls /bin/bash > /dev/null 2>&1")
+        path = 'bash' if system("docker exec #{cid} ls /bin/bash")
 
         port = new_port
         logs = []
