@@ -25,8 +25,8 @@ class ServerTtyd < Sinatra::Base
       ttyd = $cid2thread[cid]
       return ttyd unless ttyd.nil? || ttyd[:thread].nil?
 
-      c_inspect = JSON( `docker inspect #{cid} 2>&1`) rescue nil
-      path = c_inspect ? c_inspect[0].dig('Path') : 'bash'
+      path = 'bash'
+      path = 'sh' if `docker exec -it #{cid} ls /bin/sh 2>&1` =~ %r{/bin/sh}
 
       thrd = Thread.new do
         port = new_port
