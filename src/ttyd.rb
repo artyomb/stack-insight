@@ -25,13 +25,13 @@ class ServerTtyd < Sinatra::Base
       ttyd = $cid2thread[cid]
       return ttyd unless ttyd.nil? || ttyd[:thread].nil?
 
-      path = 'bash'
-      path = 'sh' if `docker exec #{cid} ls /bin/sh 2>&1` =~ %r{/bin/sh}
-
       thrd = Thread.new do
+        path = 'sh'
+        path = 'bash' if `docker exec #{cid} ls /bin/bash 2>&1`.strip =~ %r{/bin/bash}
+
         port = new_port
         logs = []
-        otl_span "ttyd cid: #{cid}, port: #{port}", { cid: , port: } do
+        otl_span "ttyd cid: #{cid}, port: #{port}, path: #{path}", { cid: , port:, path: } do
           $cid2thread[cid] = { thread: thrd, cid:, port:, logs: }
           Open3.popen3("ttyd -p #{port} -W docker exec -it #{cid} #{path}") do |stdin, stdout, stderr, wait_thr|
             # Open3.popen3("ttyd -p #{port} -W ssh swarm") do |stdin, stdout, stderr, wait_thr|
