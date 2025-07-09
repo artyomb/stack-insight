@@ -26,7 +26,7 @@ class ServerTtyd < Sinatra::Base
       return ttyd unless ttyd.nil? || ttyd[:thread].nil?
 
       path = 'bash'
-      path = 'sh' if `docker exec -it #{cid} ls /bin/sh 2>&1` =~ %r{/bin/sh}
+      path = 'sh' if `docker exec #{cid} ls /bin/sh 2>&1` =~ %r{/bin/sh}
 
       thrd = Thread.new do
         port = new_port
