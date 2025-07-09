@@ -27,7 +27,7 @@ class ServerTtyd < Sinatra::Base
 
       thrd = Thread.new do
         path = 'sh'
-        path = 'bash' if `docker exec #{cid} ls /bin/bash 2>&1`.strip =~ %r{/bin/bash}
+        path = 'bash' if system("docker exec #{cid} ls /bin/bash > /dev/null 2>&1")
 
         port = new_port
         logs = []
