@@ -22,6 +22,8 @@ class ServerTtyd < Sinatra::Base
     end
 
     otl_def def start_ttyd(cid)
+      system 'ps'
+      puts "start_ttyd: $cid2thread: #{$cid2thread}"
       ttyd = $cid2thread[cid]
       return ttyd unless ttyd.nil? || ttyd[:thread].nil?
 
