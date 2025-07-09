@@ -25,12 +25,15 @@ class ServerTtyd < Sinatra::Base
       ttyd = $cid2thread[cid]
       return ttyd unless ttyd.nil? || ttyd[:thread].nil?
 
+      c_inspect = JSON( `docker inspect #{cid} 2>&1`) rescue nil
+      path = c_inspect ? c_inspect[0].dig('Path') : 'bash'
+
       thrd = Thread.new do
         port = new_port
         logs = []
         otl_span "ttyd cid: #{cid}, port: #{port}", { cid: , port: } do
           $cid2thread[cid] = { thread: thrd, cid:, port:, logs: }
-          Open3.popen3("ttyd -p #{port} -W docker exec -it #{cid} bash") do |stdin, stdout, stderr, wait_thr|
+          Open3.popen3("ttyd -p #{port} -W docker exec -it #{cid} #{path}") do |stdin, stdout, stderr, wait_thr|
             # Open3.popen3("ttyd -p #{port} -W ssh swarm") do |stdin, stdout, stderr, wait_thr|
             $cid2thread[cid][:wait_thr] = wait_thr
             stdin.close
