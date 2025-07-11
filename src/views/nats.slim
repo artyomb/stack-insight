@@ -21,15 +21,15 @@ ruby:
   services = []
   # Subscribe to service discovery subject (SUB $SRV.PING 1)
   sub = $nats_client.subscribe("$SRV.PING") { |msg, reply, subject|
-    services << JSON.parse(msg)
+    services << {msg: msg, reply: reply, subject: subject}
     puts "[Received] on '#{subject}': '#{msg}'"
   }
 
   # Send service ping to discover services(PUB $SRV.PING 0)
-  $nats_client.publish "$SRV.PING", "PING"
+  $nats_client.publish "$SRV.PING", ''
 
-  sub.unsubscribe(2)
   sleep 2
+  sub.unsubscribe(2)
 
 pre = JSON.pretty_generate services
 
