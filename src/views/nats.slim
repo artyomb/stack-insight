@@ -8,6 +8,7 @@ ruby:
   $SRV.PING
   $SRV.STATS
   $SRV.INFO
+
   }
 
 h2 Nats
@@ -19,17 +20,33 @@ h2 Nats
 h2 Services
 ruby:
   services = []
-  # Subscribe to service discovery subject (SUB $SRV.PING 1)
-  sub = $nats_client.subscribe("$SRV.PING") { |msg, reply, subject|
-    services << {msg: msg, reply: reply, subject: subject}
-    puts "[Received] on '#{subject}': '#{msg}'"
-  }
+  inbox = $nats_client.new_inbox
 
-  # Send service ping to discover services(PUB $SRV.PING 0)
-  $nats_client.publish "$SRV.PING", ''
+  sub = $nats_client.subscribe inbox, & -> { services << JSON(_1.data) }
 
-  sleep 2
-  sub.unsubscribe(2)
+  $nats_client.publish '$SRV.PING', '', inbox
+  $nats_client.publish '$SRV.STATS', '', inbox
+  $nats_client.publish '$SRV.INFO', '', inbox
+
+  $nats_client.publish '$SYS.REQ.SERVER.PING', '', inbox
+  $nats_client.publish '$SYS.REQ.SERVER.INFO', '', inbox
+  $nats_client.publish '$SYS.REQ.SERVER.STATS', '', inbox
+
+  $nats_client.publish '$SYS.REQ.SERVER.CONNZ', '', inbox
+  $nats_client.publish '$SYS.REQ.SERVER.CONNZ.1', '', inbox
+
+  $nats_client.publish '$SYS.REQ.SERVER.SUBSZ', '', inbox
+  $nats_client.publish '$SYS.REQ.SERVER.SUBSZ.1', '', inbox
+
+  $nats_client.publish '$SYS.REQ.SERVER.ROUTEZ', '', inbox
+
+  $nats_client.publish '$SYS.REQ.SERVER.SUBJECTS', '', inbox
+  $nats_client.publish '$SYS.REQ.STATS.SUBJECTS', '', inbox
+  $nats_client.publish '$SYS.REQ.ACCOUNT.SUBJECTS', '', inbox
+  $nats_client.publish '$SYS.REQ.SERVER.SUBLIST', '', inbox
+
+  sleep(3)
+  sub.unsubscribe
 
 pre = JSON.pretty_generate services
 
