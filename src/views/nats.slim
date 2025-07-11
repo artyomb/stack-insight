@@ -1,4 +1,5 @@
 ruby:
+  # https://github.com/nats-io/nats.docs/blob/master/running-a-nats-service/nats_admin/jwt.md
   api = %w{
   $JS.API.INFO
   $JS.API.STREAM.LIST
@@ -9,6 +10,16 @@ ruby:
   $SRV.STATS
   $SRV.INFO
 
+  $SYS.REQ.SERVER.PING.IDZ
+  $SYS.REQ.SERVER.PING.SUBZ
+  $SYS.REQ.SERVER.PING.CONNZ
+  $SYS.REQ.SERVER.PING.VARZ
+  $SYS.REQ.SERVER.PING.JSZ
+  $SYS.REQ.SERVER.PING.STATZ
+
+
+  $SYS.REQ.ACCOUNT.PING.CONNZ
+  $SYS.REQ.USER.INFO
   }
 
 h2 Nats
@@ -27,23 +38,6 @@ ruby:
   $nats_client.publish '$SRV.PING', '', inbox
   $nats_client.publish '$SRV.STATS', '', inbox
   $nats_client.publish '$SRV.INFO', '', inbox
-
-  $nats_client.publish '$SYS.REQ.SERVER.PING', '', inbox
-  $nats_client.publish '$SYS.REQ.SERVER.INFO', '', inbox
-  $nats_client.publish '$SYS.REQ.SERVER.STATS', '', inbox
-
-  $nats_client.publish '$SYS.REQ.SERVER.CONNZ', '', inbox
-  $nats_client.publish '$SYS.REQ.SERVER.CONNZ.1', '', inbox
-
-  $nats_client.publish '$SYS.REQ.SERVER.SUBSZ', '', inbox
-  $nats_client.publish '$SYS.REQ.SERVER.SUBSZ.1', '', inbox
-
-  $nats_client.publish '$SYS.REQ.SERVER.ROUTEZ', '', inbox
-
-  $nats_client.publish '$SYS.REQ.SERVER.SUBJECTS', '', inbox
-  $nats_client.publish '$SYS.REQ.STATS.SUBJECTS', '', inbox
-  $nats_client.publish '$SYS.REQ.ACCOUNT.SUBJECTS', '', inbox
-  $nats_client.publish '$SYS.REQ.SERVER.SUBLIST', '', inbox
 
   sleep(3)
   sub.unsubscribe
