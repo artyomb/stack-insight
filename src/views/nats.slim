@@ -13,6 +13,7 @@ ruby:
   $SYS.REQ.SERVER.PING.IDZ
   $SYS.REQ.SERVER.PING.SUBZ
   $SYS.REQ.SERVER.PING.CONNZ
+  $SYS.REQ.SERVER.PING.CONNZ.SUBS
   $SYS.REQ.SERVER.PING.VARZ
   $SYS.REQ.SERVER.PING.JSZ
   $SYS.REQ.SERVER.PING.STATZ
@@ -21,12 +22,21 @@ ruby:
   $SYS.REQ.ACCOUNT.PING.CONNZ
   $SYS.REQ.USER.INFO
   }
+  sub_t = $nats_client.subscribe 'msg.test', & -> { puts _1.data }
+  $nats_client.publish 'msg.test' 'Hello'
+
+  msgs = []
+  api.each do |a|
+    msg = $nats_client.request(a, { subscriptions_detail: true }.to_json ).data rescue "{}"
+    msgs << { name: a, msg: JSON.pretty_generate( JSON(msg) )}
+  end
+
+  sub_t.unsubscribe
 
 h2 Nats
-- api.each do |a|
-  h3 = a
-  - msg = $nats_client.request(a).data rescue  "{}"
-  pre = JSON.pretty_generate JSON(msg)
+- msgs.each do |m|
+  h3 = m[:name]
+  pre = m[:msg]
 
 h2 Services
 ruby:
@@ -41,6 +51,7 @@ ruby:
 
   sleep(3)
   sub.unsubscribe
+
 
 pre = JSON.pretty_generate services
 
