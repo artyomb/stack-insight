@@ -5,7 +5,9 @@ ruby:
   $JS.API.STREAM.NAMES
 
   $JS.API.STREAM.TEMPLATE.NAMES
-
+  $SRV.PING
+  $SRV.STATS
+  $SRV.INFO
   }
 
 h2 Nats
@@ -14,3 +16,27 @@ h2 Nats
   - msg = $nats_client.request(a).data rescue  "{}"
   pre = JSON.pretty_generate JSON(msg)
 
+h2 Services
+ruby:
+  services = []
+  # Subscribe to service discovery subject (SUB $SRV.PING 1)
+  sub = $nats_client.subscribe("$SRV.PING") { |msg, reply, subject|
+    services << JSON.parse(msg)
+    puts "[Received] on '#{subject}': '#{msg}'"
+  }
+
+  # Send service ping to discover services(PUB $SRV.PING 0)
+  $nats_client.publish "$SRV.PING", "PING"
+
+  sub.unsubscribe(2)
+  sleep 2
+
+pre = JSON.pretty_generate services
+
+ruby:
+  ## For specific service info
+  #PUB $SRV.INFO.< service - name > 0
+  #
+  #-`$SRV.PING|STATS|INFO` - pings and retrieves status for all services
+  #-`$SRV.PING|STATS|INFO.<name>` - pings or retrieves status for all services having the specified name
+  #-`$SRV.PING|STATS|INFO.<name>.<id>` - pings or retrieves status of a particular service instance
