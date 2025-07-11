@@ -1,0 +1,16 @@
+ruby:
+  api = %w{
+  $JS.API.INFO
+  $JS.API.STREAM.LIST
+  $JS.API.STREAM.NAMES
+
+  $JS.API.STREAM.TEMPLATE.NAMES
+
+  }
+
+h2 Nats
+- api.each do |a|
+  h3 = a
+  - msg = $nats_client.request(a).data rescue  "{}"
+  pre = JSON.pretty_generate JSON(msg)
+
