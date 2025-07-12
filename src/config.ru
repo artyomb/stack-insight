@@ -1,4 +1,12 @@
 #!/usr/bin/env ruby
+puts "RubyVM::YJIT: #{RubyVM::YJIT.enabled?}"
+if defined?(RubyVM::YJIT) && RubyVM::YJIT.respond_to?(:enable)
+  RubyVM::YJIT.enable
+else
+  puts "YJIT is not enabled"
+end
+puts "RubyVM::YJIT: #{RubyVM::YJIT.enabled?}"
+
 require 'async'
 require 'stack-service-base'
 require 'stack-service-base/prometheus_parser'
