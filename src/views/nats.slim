@@ -1,41 +1,61 @@
 ruby:
   # https://github.com/nats-io/nats.docs/blob/master/running-a-nats-service/nats_admin/jwt.md
+  # https://docs.nats.io/running-a-nats-service/nats_admin/monitoring#subscription-routing-information
   api = %w{
-  $JS.API.INFO
-  $JS.API.STREAM.LIST
-  $JS.API.STREAM.NAMES
+    $JS.API.INFO
+    $JS.API.STREAM.LIST
+    $JS.API.STREAM.NAMES
 
-  $JS.API.STREAM.TEMPLATE.NAMES
-  $SRV.PING
-  $SRV.STATS
-  $SRV.INFO
+    $JS.API.STREAM.TEMPLATE.NAMES
+    $SRV.PING
+    $SRV.STATS
+    $SRV.INFO
 
-  $SYS.REQ.SERVER.PING.IDZ
-  $SYS.REQ.SERVER.PING.SUBZ
-  $SYS.REQ.SERVER.PING.CONNZ
-  $SYS.REQ.SERVER.PING.CONNZ.SUBS
-  $SYS.REQ.SERVER.PING.VARZ
-  $SYS.REQ.SERVER.PING.JSZ
-  $SYS.REQ.SERVER.PING.STATZ
+    $SYS.REQ.SERVER.PING.IDZ
+    $SYS.REQ.SERVER.PING.SUBZ
+    $SYS.REQ.SERVER.PING.CONNZ
+    $SYS.REQ.SERVER.PING.CONNZ.SUBS
+    $SYS.REQ.SERVER.PING.VARZ
+    $SYS.REQ.SERVER.PING.JSZ
+    $SYS.REQ.SERVER.PING.STATZ
 
+    $SYS.REQ.USER.INFO
 
-  $SYS.REQ.ACCOUNT.PING.CONNZ
-  $SYS.REQ.USER.INFO
+    $JS.API.STREAM.INFO.KV_
+    $KV
+    $OBJ
+    $JS.API.KV
+    $JS.API.OBJ
   }
+  # $SYS.REQ.ACCOUNT.PING.CONNZ
+
+  js = $nats_client.jetstream
+  kv = js.create_key_value bucket: "TEST", history: 5, ttl: 3600
+  status = kv.status
+  revision = kv.put "hello", "world"
+  entry = kv.get "hello"
+  status = kv.status
+
   sub_t = $nats_client.subscribe 'msg.test', & -> { puts _1.data }
   $nats_client.publish 'msg.test' 'Hello'
 
   msgs = []
   api.each do |a|
+    time = Time.now
     msg = $nats_client.request(a, { subscriptions_detail: true }.to_json ).data rescue "{}"
-    msgs << { name: a, msg: JSON.pretty_generate( JSON(msg) )}
+    time = Time.now - time
+    msgs << { name: a, time:, msg: JSON.pretty_generate( JSON(msg) )}
   end
 
   sub_t.unsubscribe
 
+  kv.delete "hello"
+  js.delete_key_value "TEST"
+
 h2 Nats
 - msgs.each do |m|
   h3 = m[:name]
+  pre = m[:time].to_s
   pre = m[:msg]
 
 h2 Services
