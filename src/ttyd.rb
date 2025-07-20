@@ -15,6 +15,8 @@ class ServerTtyd < Sinatra::Base
 
     def port_free?(port) = TCPServer.new('127.0.0.1', port).close rescue false
 
+    def container_running?(cid) = system("docker exec #{cid} echo test", out: File::NULL, err: File::NULL)
+
     def container_shell(cid) = system("docker exec #{cid} ls /bin/bash", out: File::NULL, err: File::NULL) ? 'bash' : 'sh'
 
     def cleanup_sessions = SESSIONS.filter! { |_, s| s[:thread]&.alive? || (kill_session(s); false) }
@@ -26,6 +28,8 @@ class ServerTtyd < Sinatra::Base
     end
 
     def start_session(cid)
+      raise "Container #{cid} not running" unless container_running?(cid)
+
       cleanup_sessions
       return SESSIONS[cid] if SESSIONS[cid]&.dig(:thread)&.alive?
 
@@ -73,13 +77,14 @@ class ServerTtyd < Sinatra::Base
 
       Async::WebSocket::Client.connect(endpoint, protocols: ['tty']) do |ttyd|
         [
-          Async { while msg = ttyd.read; client.write(msg); client.flush; end },
-          Async { while msg = client.read; ttyd.write(msg); ttyd.flush; end }
+          Async { while msg = ttyd.read; client.write(msg); client.flush; end rescue nil },
+          Async { while msg = client.read; ttyd.write(msg); ttyd.flush; end rescue nil }
         ].each(&:wait)
       end
     end
   rescue => e
     puts "WS[#{params[:cid]}]: #{e.message}"
+    halt 400, "Container not available: #{e.message}"
   ensure
     client&.close rescue nil
   end
@@ -100,6 +105,6 @@ class ServerTtyd < Sinatra::Base
     halt 503
   rescue => e
     puts "HTTP[#{params[:cid]}]: #{e.message}"
-    halt 500
+    halt 400, "Container not available: #{e.message}"
   end
 end
