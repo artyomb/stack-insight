@@ -73,14 +73,15 @@ class ServerTtyd < Sinatra::Base
 
       Async::WebSocket::Client.connect(endpoint, protocols: ['tty']) do |ttyd|
         [
-          Async { ttyd.each { client.write(_1); client.flush } },
-          Async { client.each { ttyd.write(_1); ttyd.flush } }
+          Async { while msg = ttyd.read; client.write(msg); client.flush; end },
+          Async { while msg = client.read; ttyd.write(msg); ttyd.flush; end }
         ].each(&:wait)
       end
     end
   rescue => e
     puts "WS[#{params[:cid]}]: #{e.message}"
-    halt 500
+  ensure
+    client&.close rescue nil
   end
 
   get '/ttyd/:cid*' do
