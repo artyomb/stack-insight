@@ -112,7 +112,8 @@ class ServerTtyd < Sinatra::Base
     path = params.dig('splat', 0)&.split('/')&.last || ''
 
     3.times do
-      response = Net::HTTP.get_response("http://localhost:#{session[:port]}/#{path}")
+      uri = URI("http://localhost:#{session[:port]}/#{path}")
+      response = Net::HTTP.get_response(uri)
       content_type response['content-type'] if response['content-type']
       status response.code.to_i
       return response.body
