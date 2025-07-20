@@ -1,18 +1,28 @@
 / registry-1.docker.io
 / auth.docker.io
+ruby:
+  image =`docker service inspect #{params[:service]} --format '{{.Spec.TaskTemplate.ContainerSpec.Image}}'`
+  image = image.gsub(/@sha256:.*/, '').strip
+  ps = Async { JSON `docker ps #{@calc_size} --filter "label=com.docker.swarm.service.name=#{params[:service]}" --format '{{.ID}}' | xargs -r docker inspect #{@calc_size_inspect} 2>&1 | jq -s` }
+  ps = ps.wait.first
+  container_is_outdated = false
 
 h1 Update Service: #{params[:service]}
-- image =`docker service inspect #{params[:service]} --format '{{.Spec.TaskTemplate.ContainerSpec.Image}}'`
-- image = image.gsub(/@sha256:.*/, '').strip
-- ps = Async { JSON `docker ps #{@calc_size} --filter "label=com.docker.swarm.service.name=#{params[:service]}" --format '{{.ID}}' | xargs -r docker inspect #{@calc_size_inspect} 2>&1 | jq -s` }
-- ps = ps.wait.first
-- container_is_outdated = false
 
 h2 Docker pull image: #{image}
 - pull = `docker pull #{image} 2>&1 | tee`
 - image_digest = pull[/Digest: (sha256:.{64})/, 1]
 
 pre = pull
+
+/ Error response from daemon: Head "https://.../manifests/latest": denied: access forbidden
+- if pull =~ /denied:\s+access\s+forbidden/
+  / If the server have not access to te registry, it will not be able to pull the image.
+  / But the swarm can pull the image from the registry if deployed with the flag `--with-registry-auth`.
+  / docker service update --force vector_back --image ...:latest
+  h2 Image cannot be pulled. (access denied)
+  p Try to update using docker service update --force #{params[:service]} --image #{image}
+  pre = `docker service update --force #{params[:service]} --image #{image} 2>&1 | grep -vE '\[.*=>.*\]'`
 
 - if pull =~ /Image is up to date /
   h2 Image is up to date

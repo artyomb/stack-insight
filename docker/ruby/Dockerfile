@@ -34,7 +34,7 @@ ENV SERVER_ENV=production \
     RACK_ENV=production \
     PORT=7000
 
-ENV RUBYOPT="--yjit"
+ENV RUBY_YJIT_ENABLE=1
 
 WORKDIR /app
 
