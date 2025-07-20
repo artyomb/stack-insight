@@ -44,7 +44,7 @@ class ServerTtyd < Sinatra::Base
       thread = Thread.new { run_ttyd(cid, port, shell) }
 
       SESSIONS[cid] = { thread:, port:, cid: }.tap do |session|
-        5.times { return session if session[:pid] && !port_free?(port); sleep 0.1 }
+        10.times { return session if session[:pid] && !port_free?(port); sleep 0.2 }
         kill_session(session)
         SESSIONS.delete(cid)
         raise "ttyd startup failed for #{cid}"
@@ -55,7 +55,7 @@ class ServerTtyd < Sinatra::Base
 
     def run_ttyd(cid, port, shell)
       Open3.popen3("ttyd -p #{port} -W docker exec -it #{cid} #{shell}") do |stdin, stdout, stderr, wait|
-        SESSIONS[cid][:pid] = wait.pid
+        SESSIONS[cid][:pid] = wait.pid if SESSIONS[cid]
         stdin.close
 
         [
