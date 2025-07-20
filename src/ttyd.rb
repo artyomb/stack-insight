@@ -13,7 +13,12 @@ class ServerTtyd < Sinatra::Base
   helpers do
     def find_port = PORTS.find { port_free?(_1) } || raise('No ports available')
 
-    def port_free?(port) = TCPServer.new('127.0.0.1', port).close rescue false
+    def port_free?(port)
+      TCPServer.new('127.0.0.1', port).close
+      true
+    rescue Errno::EADDRINUSE
+      false
+    end
 
     def container_running?(cid) = system("docker exec #{cid} echo test", out: File::NULL, err: File::NULL)
 
