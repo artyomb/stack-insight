@@ -43,17 +43,28 @@ class ServerTtyd < Sinatra::Base
       port, shell = find_port, container_shell(cid)
       thread = Thread.new { run_ttyd(cid, port, shell) }
 
-      SESSIONS[cid] = { thread:, port:, cid: }.tap do |session|
-        10.times { return session if session[:pid] && !port_free?(port); sleep 0.2 }
-        kill_session(session)
-        SESSIONS.delete(cid)
-        raise "ttyd startup failed for #{cid}"
+      SESSIONS[cid] = { thread:, port:, cid: }
+
+      # Wait for ttyd to start - check if thread is still alive AND port is bound
+      20.times do |i|
+        if SESSIONS[cid] && SESSIONS[cid][:thread]&.alive? && !port_free?(port)
+          puts "ttyd started for #{cid} on port #{port} after #{i * 0.1}s"
+          return SESSIONS[cid]
+        end
+        sleep 0.1
       end
+
+      # Startup failed
+      puts "ttyd startup failed for #{cid}: thread_alive=#{SESSIONS[cid]&.dig(:thread)&.alive?}, port_bound=#{!port_free?(port)}"
+      kill_session(SESSIONS[cid]) if SESSIONS[cid]
+      SESSIONS.delete(cid)
+      raise "ttyd startup failed for #{cid}"
     end
 
     private
 
     def run_ttyd(cid, port, shell)
+      puts "Starting: ttyd -p #{port} -W docker exec -it #{cid} #{shell}"
       Open3.popen3("ttyd -p #{port} -W docker exec -it #{cid} #{shell}") do |stdin, stdout, stderr, wait|
         SESSIONS[cid][:pid] = wait.pid if SESSIONS[cid]
         stdin.close
@@ -65,6 +76,8 @@ class ServerTtyd < Sinatra::Base
 
         puts "ttyd[#{cid}] exit: #{wait.value.exitstatus}"
       end
+    rescue => e
+      puts "ttyd process error for #{cid}: #{e.message}"
     ensure
       SESSIONS.delete(cid)
     end
