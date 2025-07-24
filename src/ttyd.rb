@@ -24,7 +24,7 @@ class ServerTtyd < Sinatra::Base
     def kill_session(session) = (Process.kill('TERM', session[:pid]) if session[:pid]; session[:thread]&.kill) rescue nil
 
     def start_session(cid)
-      raise "Container #{cid} not running" unless container_running?(cid)
+      raise "Container #{cid} not running" unless cid == '0' || container_running?(cid)
 
       cleanup_sessions
       return SESSIONS[cid] if SESSIONS[cid]&.dig(:thread)&.alive?
@@ -50,7 +50,10 @@ class ServerTtyd < Sinatra::Base
     private
 
     def run_ttyd(cid, port, shell)
-      Open3.popen3("ttyd -p #{port} -W docker exec -it #{cid} #{shell}") do |stdin, stdout, stderr, wait|
+      host_shell = 'docker run --rm -it --privileged --pid=host alpine:edge nsenter -t 1 -m -u -n -i sh'
+      cmd = cid == '0' ? host_shell : "docker exec -it #{cid} #{shell}"
+      cmd = "ttyd -p #{port} -W #{cmd}"
+      Open3.popen3(cmd) do |stdin, stdout, stderr, wait|
         SESSIONS[cid][:pid] = wait.pid if SESSIONS[cid]
         stdin.close
 
