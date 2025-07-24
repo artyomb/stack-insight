@@ -77,7 +77,7 @@ class ServerTtyd < Sinatra::Base
     selected = protocols.include?('tty') ? ['tty'] : []
 
     Async::WebSocket::Adapters::Rack.open(env, protocols: selected) do |client|
-      endpoint = Async::HTTP::Endpoint.parse("ws://localhost:#{session[:port]}/ws")
+      endpoint = Async::HTTP::Endpoint.parse("ws://127.0.0.1:#{session[:port]}/ws")
 
       Async::WebSocket::Client.connect(endpoint, protocols: ['tty']) do |ttyd|
         [
@@ -98,9 +98,9 @@ class ServerTtyd < Sinatra::Base
     path = params.dig('splat', 0)&.split('/')&.last || ''
 
     4.times do
-      puts "connecting to http://localhost:#{session[:port]}/#{path}"
+      puts "connecting to http://127.0.0.1:#{session[:port]}/#{path}"
 
-      uri = URI("http://localhost:#{session[:port]}/#{path}")
+      uri = URI("http://127.0.0.1:#{session[:port]}/#{path}")
       response = Net::HTTP.get_response(uri)
       content_type response['content-type'] if response['content-type']
       status response.code.to_i
