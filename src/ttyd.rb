@@ -97,9 +97,9 @@ class ServerTtyd < Sinatra::Base
     session = start_session(params[:cid])
     path = params.dig('splat', 0)&.split('/')&.last || ''
 
-    puts "connecting to http://localhost:#{session[:port]}/#{path}"
-
     4.times do
+      puts "connecting to http://localhost:#{session[:port]}/#{path}"
+
       uri = URI("http://localhost:#{session[:port]}/#{path}")
       response = Net::HTTP.get_response(uri)
       content_type response['content-type'] if response['content-type']
