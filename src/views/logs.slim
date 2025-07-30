@@ -3,7 +3,10 @@ ruby:
   columns = %w[ID Name Node Image Ports DesiredState CurrentState Error]
 
   tasks_logs = tasks.map do |t|
-    { id: t['ID'], logs: docker("tasks/#{t['ID']}/logs?stdout=1&stderr=1&timestamps=1&tail=100", false) }
+    { id: t['ID'],
+      state: t['CurrentState'],
+      logs: docker("tasks/#{t['ID']}/logs?stdout=1&stderr=1&timestamps=1&tail=100", false)
+    }
   end
 
   parse_logs = ->(data) do
@@ -49,7 +52,7 @@ a href="../logs_ws/?service=#{params[:service]}"
   button style="cursor: pointer;" Live Logs
 
 - tasks_logs.reverse.each do |logs|
-  h3 Task id: #{logs[:id]}
+  h3 Task id (#{logs[:state]}): #{logs[:id]}
   pre.logs = logs[:logs].join
 
 javascript:
