@@ -1,11 +1,61 @@
+ruby:
+  tasks = JSON `docker service ps --no-trunc #{params[:service]} --format '{{json .}}' | jq -s . 2>&1`
+  columns = %w[ID Name Node Image Ports DesiredState CurrentState Error]
+
+  tasks_logs = tasks.map do |t|
+    { id: t['ID'], logs: docker("tasks/#{t['ID']}/logs?stdout=1&stderr=1&timestamps=1&tail=100", false) }
+  end
+
+  parse_logs = ->(data) do
+    logs, i = [], 0
+    while i + 8 <= data.size
+      stream_type = data[i].unpack1('C')
+      len = data[i + 4, 4].unpack1('N')
+
+      unless [1, 2].include?(stream_type)
+        i += 1
+        next
+      end
+
+      break if len > 65536 || i + 8 + len > data.size
+
+      i += 8
+      payload = data[i, len]
+
+      # Fix: truncate at embedded header
+      if stream_type == 1 && (newline_pos = payload.rindex("\n"))
+        after_newline = payload[newline_pos + 1..-1]
+        if after_newline&.length >= 8 && [1, 2].include?(after_newline[0].unpack1('C'))
+          payload = payload[0..newline_pos]  # Include the newline
+          len = newline_pos + 9  # Adjust length for next iteration
+        end
+      end
+
+      logs << payload
+      i += len
+    end
+    logs
+  end
+
+  tasks_logs.each { _1[:logs] = parse_logs[_1[:logs].wait] }
+
+  #logs = `docker service logs -n 100 #{params[:service]} 2>&1`
+
 h1 Service Logs: #{params[:service]}
 / - logs = `docker service logs -n 100 --raw -t #{params[:service]}`
-- logs = `docker service logs -n 100 #{params[:service]} 2>&1`
+
 == slim :ansi2html, locals: {  }
 a href="../logs_ws/?service=#{params[:service]}"
   button style="cursor: pointer;" Live Logs
-pre#logs = logs
+
+- tasks_logs.reverse.each do |logs|
+  h3 Task id: #{logs[:id]}
+  pre.logs = logs[:logs].join
+
 javascript:
-  const text = document.getElementById('logs').innerText;
-  document.getElementById('logs').innerHTML = ansiToHtml( text );
+  // Process all elements with class 'logs'
+  document.querySelectorAll('.logs').forEach(function(element) {
+    const text = element.innerText;
+    element.innerHTML = ansiToHtml(text);
+  });
 

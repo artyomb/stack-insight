@@ -24,7 +24,7 @@ class ServerInsight < Sinatra::Base
       SVG
     end
 
-    def docker(api)
+    def docker(api, json=true)
       Async do
         otl_span(api) do
           path, params_str = api.split('?')
@@ -39,7 +39,7 @@ class ServerInsight < Sinatra::Base
                        `#{cmd} 2>&1` :
                        `docker run --rm --privileged --pid=host alpine:edge nsenter -t 1 -m -u -n -i #{cmd} 2>&1`
 
-          JSON(response, symbolize_key: true)
+          json ? JSON(response, symbolize_key: true) : response
         rescue => e
           raise "Exception: #{response}"
         end
