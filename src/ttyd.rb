@@ -50,7 +50,7 @@ class ServerTtyd < Sinatra::Base
     private
 
     def run_ttyd(cid, port, shell)
-      host_shell = 'docker run --rm -it --privileged --pid=host alpine:edge nsenter -t 1 -m -u -n -i sh'
+      host_shell = 'docker run --rm -it --privileged --pid=host alpine:edge nsenter -t 1 -m -u -n -i bash'
       cmd = cid == '0' ? host_shell : "docker exec -it #{cid} #{shell}"
       cmd = "ttyd -p #{port} -W #{cmd}"
       Open3.popen3(cmd) do |stdin, stdout, stderr, wait|
