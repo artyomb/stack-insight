@@ -86,6 +86,7 @@ class ServerInsight < Sinatra::Base
   get '/inspect*', &-> { slim :inspect }
   get '/ps*', &-> { slim :ps }
   get '/update*', &-> { slim :update }
+  get '/restart*', &-> { slim :restart }
   get '/', &-> { slim :index }
   post '/tag*', &-> { slim :tag }
 

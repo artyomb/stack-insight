@@ -5,7 +5,7 @@ ruby:
   tasks_logs = tasks.map do |t|
     { id: t['ID'],
       state: t['CurrentState'],
-      logs: docker("tasks/#{t['ID']}/logs?stdout=1&stderr=1&timestamps=1&tail=100", false)
+      logs: docker("tasks/#{t['ID']}/logs?stdout=1&stderr=1&timestamps=1&tail=200", false)
     }
   end
 

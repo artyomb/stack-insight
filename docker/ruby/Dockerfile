@@ -17,7 +17,7 @@ RUN bundle install --jobs $(nproc) --retry=3 && \
     bundle clean --force && rm -rf /usr/local/bundle/cache/*
 
 FROM ruby:3.4.4-slim-bookworm AS deploy
-RUN apt update && apt install --fix-missing -y bash curl libpq-dev openssh-client \
+RUN apt update && apt install --fix-missing -y bash curl libpq-dev openssh-client procps\
       libssl-dev docker.io jq libwebsockets-dev\
      && rm -rf /var/lib/apt/lists/*
 

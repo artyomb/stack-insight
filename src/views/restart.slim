@@ -1,0 +1,3 @@
+h1 Force restart Service: #{params[:service]}
+
+pre = `docker service update --force #{params[:service]} 2>&1 | grep -vE '.*0 out of 1 tasks.*'`

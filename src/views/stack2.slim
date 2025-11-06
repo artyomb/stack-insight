@@ -85,7 +85,7 @@ ruby:
 
   service_errors = service_errors.wait
 
-  columns = %w[NameT Image Image\ Age Version Commit Replicas RPS ESpans Container\ Size Running]
+  columns = %w[NameT Image Image\ Age Version Commit Replicas CurrentState RPS ESpans Container\ Size Running]
   services.map { |s|
     Async do
       spec = s['Spec']
@@ -149,7 +149,12 @@ ruby:
         #end
 
         if task['Status']['State'] == 'running'
-          image = $container_images_cache[con['Image']] ||= JSON(`docker image inspect #{con['Image']}`)[0]
+          container = s['container'] = ps.find { _1['Id'] == task['Status']['ContainerStatus']['ContainerID'] }
+          s['Container Size'] = container&.dig('SizeRw') # "SizeRw": 16828757,    "SizeRootFs" : 328033441,
+          s['Container Size'] = number_to_human_size.call s['Container Size']
+
+          image_sha = container['ImageID']
+          image = $container_images_cache[image_sha] ||= JSON(`docker image inspect #{image_sha}`)[0]
           unless image
             p 1
           end
@@ -177,9 +182,6 @@ ruby:
 
           s['Commit'] = image.dig('Config', 'Labels', 'com.gitlab.ci.commit_message')
 
-          container = s['container'] = ps.find{ _1['Id'] == task['Status']['ContainerStatus']['ContainerID'] }
-          s['Container Size'] = container&.dig('SizeRw') # "SizeRw": 16828757,    "SizeRootFs" : 328033441,
-          s['Container Size'] = number_to_human_size.call s['Container Size']
         else
           s['Version'] = ''
         end
@@ -216,4 +218,5 @@ pre: table
         a.action href="inspect/?service=#{s['Name']}" title="Inspect" I
         a.action href="logs/?service=#{s['Name']}" title="Logs" L
         a.action href="update/?service=#{s['Name']}" onclick="return confirm('Are you sure to Pull and Update \n#{s['Name']}?')" title="Update" U
+        a.action href="restart/?service=#{s['Name']}" onclick="return confirm('Are you sure to Force update \n#{s['Name']}?')" title="Force update" R
 

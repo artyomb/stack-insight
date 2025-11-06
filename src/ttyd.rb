@@ -62,6 +62,7 @@ class ServerTtyd < Sinatra::Base
           Thread.new { stderr.each_line { puts "[#{cid}] ERR: #{_1.chomp}" } }
         ].each(&:join)
 
+        kill_session SESSIONS[cid]
         puts "ttyd[#{cid}] exit: #{wait.value.exitstatus}"
       end
     ensure
