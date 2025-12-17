@@ -13,7 +13,8 @@ gem 'sass'
 gem 'rack'
 gem 'rackup'
 
-gem 'stack-service-base' , path: '/home/user/projects/stack-service-base'
+gem 'stack-service-base'#
+# , path: '/home/user/projects/stack-service-base'
 
 # gem 'opentelemetry-sdk'
 # gem 'opentelemetry-exporter-otlp'
