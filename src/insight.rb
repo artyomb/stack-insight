@@ -24,6 +24,8 @@ class ServerInsight < Sinatra::Base
       SVG
     end
 
+    # https://docs.docker.com/reference/api/engine/version/v1.44/
+    # https://docs.docker.com/reference/api/engine/version-history/
     def docker(api, json=true)
       Async do
         otl_span(api) do

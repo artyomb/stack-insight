@@ -18,7 +18,7 @@ RUN bundle install --jobs $(nproc) --retry=3 && \
 
 FROM ruby:3.4.4-slim-bookworm AS deploy
 RUN apt update && apt install --fix-missing -y bash curl libpq-dev openssh-client libyaml-0-2 procps\
-      libssl-dev jq libwebsockets-dev\
+      libssl-dev jq libjson-c5 libwebsockets-dev \
      && rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
