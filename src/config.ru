@@ -3,7 +3,7 @@ puts "RubyVM::YJIT: #{RubyVM::YJIT.enabled?}"
 if defined?(RubyVM::YJIT) && RubyVM::YJIT.respond_to?(:enable)
   RubyVM::YJIT.enable
 else
-  puts "YJIT is not enabled"
+  puts 'YJIT is not enabled'
 end
 puts "RubyVM::YJIT: #{RubyVM::YJIT.enabled?}"
 

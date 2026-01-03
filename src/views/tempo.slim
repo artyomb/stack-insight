@@ -8,7 +8,7 @@ ruby:
   ps = ps.wait.first&.group_by { _1.dig 'Config', 'Labels', 'com.docker.swarm.task.id' }&.transform_values(&:first) || {}
   service_errors = []
 
-  con = ps.first.last
+  con = ps.first&.last
   if con
     #traces = `docker exec #{con['Id']} curl -G -s  http://tempo:3200/api/search --data-urlencode 'tags=service.name=#{params[:service]}' --data-urlencode 'q={ .deployment.environment = "map-back" }' --data-urlencode limit=100 2>&1`
     query = {
