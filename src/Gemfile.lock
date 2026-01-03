@@ -2,7 +2,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     ast (2.4.3)
-    async (2.35.0)
+    async (2.35.1)
       console (~> 1.29)
       fiber-annotation
       io-event (~> 1.11)
@@ -60,7 +60,7 @@ GEM
     dotenv (3.2.0)
     ed25519 (1.4.0)
     erb (6.0.1)
-    falcon (0.53.0)
+    falcon (0.53.1)
       async
       async-container (~> 0.20)
       async-container-supervisor (~> 0.6)
@@ -69,7 +69,7 @@ GEM
       async-service (~> 0.16)
       bundler
       localhost (~> 1.1)
-      openssl (~> 3.0)
+      openssl (>= 3.0)
       protocol-http (~> 0.31)
       protocol-rack (~> 0.7)
       samovar (~> 2.3)
@@ -103,7 +103,7 @@ GEM
     memory-leak (0.7.0)
     metrics (0.15.0)
     msgpack (1.8.0)
-    multi_json (1.18.0)
+    multi_json (1.19.1)
     mustermann (3.0.4)
       ruby2_keywords (~> 0.0.1)
     nats-pure (2.5.0)
@@ -115,7 +115,7 @@ GEM
     nkeys (0.1.0)
       base32 (~> 0.3)
       ed25519 (~> 1.2)
-    openssl (3.3.2)
+    openssl (4.0.0)
     opentelemetry-api (1.7.0)
     opentelemetry-common (0.23.0)
       opentelemetry-api (~> 1.0)
@@ -253,7 +253,7 @@ GEM
       opentelemetry-instrumentation-base (~> 0.25)
     opentelemetry-instrumentation-que (0.12.0)
       opentelemetry-instrumentation-base (~> 0.25)
-    opentelemetry-instrumentation-racecar (0.6.0)
+    opentelemetry-instrumentation-racecar (0.6.1)
       opentelemetry-instrumentation-base (~> 0.25)
     opentelemetry-instrumentation-rack (0.29.0)
       opentelemetry-instrumentation-base (~> 0.25)
@@ -347,14 +347,14 @@ GEM
       rack (>= 3)
     rainbow (3.1.1)
     rake (13.3.1)
-    rdoc (7.0.1)
+    rdoc (7.0.3)
       erb
       psych (>= 4.0.0)
       tsort
     regexp_parser (2.11.3)
     reline (0.6.3)
       io-console (~> 0.5)
-    rubocop (1.82.0)
+    rubocop (1.82.1)
       json (~> 2.3)
       language_server-protocol (~> 3.17.0.2)
       lint_roller (~> 1.1.0)
@@ -365,14 +365,16 @@ GEM
       rubocop-ast (>= 1.48.0, < 2.0)
       ruby-progressbar (~> 1.7)
       unicode-display_width (>= 2.4.0, < 4.0)
-    rubocop-ast (1.48.0)
+    rubocop-ast (1.49.0)
       parser (>= 3.3.7.2)
-      prism (~> 1.4)
+      prism (~> 1.7)
     ruby-progressbar (1.13.0)
     ruby2_keywords (0.0.5)
     samovar (2.4.1)
       console (~> 1.0)
       mapping (~> 1.0)
+    sass-embedded (1.97.1-x86_64-linux-gnu)
+      google-protobuf (~> 4.31)
     securerandom (0.4.1)
     sinatra (4.2.1)
       logger (>= 1.6.0)
@@ -392,7 +394,7 @@ GEM
     slim (5.2.1)
       temple (~> 0.10.0)
       tilt (>= 2.1.0)
-    stack-service-base (0.0.83)
+    stack-service-base (0.0.86)
       async
       debug
       dotenv
@@ -429,6 +431,7 @@ DEPENDENCIES
   rack
   rackup
   rubocop
+  sass-embedded
   sinatra
   sinatra-reloader
   slim
