@@ -6,7 +6,7 @@ ruby:
   _ps = _ps.wait.first&.group_by { _1.dig 'Config', 'Labels', 'com.docker.swarm.task.id' }&.transform_values(&:first) || {}
   _metrics = []
 
-  _con = _ps.first.last
+  _con = _ps.first&.last
   if _con
     query ={
             query: %(topk(100, sum by (service,code,method,router,xforwardedhost,xrequestpath)(increase(traefik_router_requests_total{service=~"#{params[:stack]}.*"}[#{_range}s])) > #{_min_count})),
