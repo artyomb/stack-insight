@@ -21,4 +21,6 @@ use Rack.middleware_klass do |env, app|
   app.call env
 end
 
+METRICS_QUERY_RANGE = ENV['METRICS_QUERY_RANGE'] ||'http://victoriametrics:8428/api/v1/query_range'
+
 run Rack::Cascade.new [ServerTtyd, ServerInsight]

@@ -15,7 +15,7 @@ ruby:
             start: (Time.now  - _range).to_i, end: Time.now.to_i,
             step: "#{_range}s"
     }
-    metrics_txt = `docker exec #{_con['Id']} curl -G -L -s http://prometheus:9090/api/v1/query_range  #{ query.map { |k, v| "--data-urlencode '#{k}=#{v}' " }.join ' ' } 2>&1`
+    metrics_txt = `docker exec #{_con['Id']} curl -G -L -s #{METRICS_QUERY_RANGE} #{ query.map { |k, v| "--data-urlencode '#{k}=#{v}' " }.join ' ' } 2>&1`
     begin
       metrics_ = JSON metrics_txt, symbolize_names: true
     rescue
