@@ -46,7 +46,7 @@ ruby:
 
   tasks = tasks.wait
   tasks = tasks.group_by { _1['ServiceID'] }
-  tasks.transform_values { |a| a.sort_by! { Time.parse _1['UpdatedAt'] }.reverse! }
+  tasks.transform_values { |a| a.sort_by! { Time.parse _1.dig('CreatedAt') }.reverse! }
 
   services = services.wait
   services.each { |s|
@@ -116,12 +116,12 @@ ruby:
         s['Klass'] = 'not_running'
       end
 
-      if !task_prev || task_prev.dig('Status', 'State') == 'failed'
-        if r != rd
-          s['Klass'] = 'error_prev'
-          s['CurrentState'] += ' > ' + task_prev.dig('Status', 'Message')
-        end
-      end
+      #if !task_prev || task_prev.dig('Status', 'State') == 'failed'
+      #  if r != rd
+      #    s['Klass'] = 'error_prev'
+      #    s['CurrentState'] += ' > ' + task_prev&.dig('Status', 'Message')
+      #  end
+      #end
 
       #unless task.dig('Status', 'State')&.empty?
       #  s['Klass'] = 'error'
