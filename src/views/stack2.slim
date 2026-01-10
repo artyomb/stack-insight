@@ -116,6 +116,9 @@ ruby:
         s['Klass'] = 'not_running'
       end
 
+      if r.to_i == 0 && s['Restart Condition'] != 'on-failure'
+        s['Klass'] = 'error_prev'
+      end
       #if !task_prev || task_prev.dig('Status', 'State') == 'failed'
       #  if r != rd
       #    s['Klass'] = 'error_prev'
