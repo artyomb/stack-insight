@@ -156,34 +156,35 @@ ruby:
           s['Container Size'] = container&.dig('SizeRw') # "SizeRw": 16828757,    "SizeRootFs" : 328033441,
           s['Container Size'] = number_to_human_size.call s['Container Size']
 
-          image_sha = container['ImageID']
-          image = $container_images_cache[image_sha] ||= JSON(`docker image inspect #{image_sha}`)[0]
-          unless image
-            p 1
+          image_sha = container['ImageID'] rescue "container['ImageID'] n/a"
+          image = $container_images_cache[image_sha] ||= JSON(`docker image inspect #{image_sha}`)[0] rescue nil
+          if image
+            c_digests = image['RepoDigests'].map { |d| d[/sha256:.{64}/] } rescue 'n/a'
+            version = image.dig('Config', 'Labels', 'org.opencontainers.image.version')
+            i_created = image['Created']
+
+            created = Time.parse task['CreatedAt']
+            if ( Time.now.utc - created.utc < 60*60*6) && s['Klass'].nil?
+              s['Klass'] = 'new'
+            end
+
+            s['Image Age'] = con.dig 'Labels', 'org.opencontainers.image.created'
+            s['Image Age'] ||= i_created
+            s['TdKlassImage Age'] = 'time'
+
+            s['Version'] = image.dig('Config', 'Labels', 'org.opencontainers.image.version') ||
+                           image.dig('Config', 'Labels', 'org.label-schema.version')
+
+            s['LinkVersion'] = image.dig('Config', 'Labels', 'com.gitlab.ci.pipelineurl')
+
+            s['LinkVersion'] ||= image.dig('Config', 'Labels', 'org.opencontainers.image.source')
+
+            s['Version'] ||= 'n/a' if s['LinkVersion']
+
+            s['Commit'] = image.dig('Config', 'Labels', 'com.gitlab.ci.commit_message')
+          else
+            s['Version'] = ''
           end
-          c_digests = image['RepoDigests'].map { |d| d[/sha256:.{64}/] } rescue 'n/a'
-          version = image.dig('Config', 'Labels', 'org.opencontainers.image.version')
-          i_created = image['Created']
-
-          created = Time.parse task['CreatedAt']
-          if ( Time.now.utc - created.utc < 60*60*6) && s['Klass'].nil?
-            s['Klass'] = 'new'
-          end
-
-          s['Image Age'] = con.dig 'Labels', 'org.opencontainers.image.created'
-          s['Image Age'] ||= i_created
-          s['TdKlassImage Age'] = 'time'
-
-          s['Version'] = image.dig('Config', 'Labels', 'org.opencontainers.image.version') ||
-                         image.dig('Config', 'Labels', 'org.label-schema.version')
-
-          s['LinkVersion'] = image.dig('Config', 'Labels', 'com.gitlab.ci.pipelineurl')
-
-          s['LinkVersion'] ||= image.dig('Config', 'Labels', 'org.opencontainers.image.source')
-
-          s['Version'] ||= 'n/a' if s['LinkVersion']
-
-          s['Commit'] = image.dig('Config', 'Labels', 'com.gitlab.ci.commit_message')
 
         else
           s['Version'] = ''
@@ -216,7 +217,10 @@ pre: table
           - else
             == s[c]
       td
-        a.action href="ttyd/#{s.dig('container', 'ID')}" title="Terminal" T
+        -if s.dig('container', 'ID')
+          a.action href="ttyd/#{s.dig('container', 'ID')}" title="Terminal" T
+        -else
+          a.action title="Terminal" T
         a.action href="ps/?service=#{s['Name']}" title="ps" P
         a.action href="inspect/?service=#{s['Name']}" title="Inspect" I
         a.action href="logs/?service=#{s['Name']}" title="Logs" L
