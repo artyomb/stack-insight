@@ -53,7 +53,7 @@ ruby:
     s['Name'] = s['Spec']['Name']
     s['NameT'] = s['Spec']['Name'].gsub(/^[^_]+_/, &->(s) { "<span class='stack_name'>#{s}</span>" })
     s['CurrentState'] = tasks[s['ID']]&.first['Status']['State'] rescue 'n/a'
-    s['Running'] = tasks[s['ID']]&.first['CreatedAt']
+    s['Running'] = tasks[s['ID']]&.first['CreatedAt'] rescue 'n/a'
     s['TdKlassRunning'] = 'time'
 
     s['Replicas'] += ' g' if s['Spec']['Mode'] == 'global'
