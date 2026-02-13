@@ -45,7 +45,7 @@ ruby:
   description = Base64.decode64 description.wait.dig('Spec', 'Data') rescue ''
 
   tasks = tasks.wait
-  tasks = tasks.group_by { _1['ServiceID'] }
+  tasks = tasks.group_by { _1['ServiceID'] } rescue {}
   tasks.transform_values { |a| a.sort_by! { Time.parse _1.dig('CreatedAt') }.reverse! }
 
   services = services.wait
