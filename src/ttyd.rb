@@ -19,12 +19,15 @@ class ServerTtyd < Sinatra::Base
 
     def container_shell(cid) = system("docker exec #{cid} ls /bin/bash", out: File::NULL, err: File::NULL) ? 'bash' : 'sh'
 
+    def nt_mapping = ENV.fetch('NT_MAPPING', 'htop:htop').split(':', 2)
+
     def cleanup_sessions = SESSIONS.filter! { |_, s| s[:thread]&.alive? || (kill_session(s); false) }
 
     def kill_session(session) = (Process.kill('TERM', session[:pid]) if session[:pid]; session[:thread]&.kill) rescue nil
 
     def start_session(cid)
-      raise "Container #{cid} not running" unless cid == '0' || container_running?(cid)
+      name, = nt_mapping
+      raise "Container #{cid} not running" unless cid == name || container_running?(cid)
 
       cleanup_sessions
       return SESSIONS[cid] if SESSIONS[cid]&.dig(:thread)&.alive?
@@ -50,9 +53,10 @@ class ServerTtyd < Sinatra::Base
     private
 
     def run_ttyd(cid, port, shell)
-      host_shell = 'docker run --rm -it --privileged --pid=host alpine:edge nsenter -t 1 -m -u -n -i bash'
-      cmd = cid == '0' ? host_shell : "docker exec -it #{cid} #{shell}"
+      name, value = nt_mapping
+      cmd = cid == name ? value : "docker exec -it #{cid} #{shell}"
       cmd = "ttyd -p #{port} -W #{cmd}"
+
       Open3.popen3(cmd) do |stdin, stdout, stderr, wait|
         SESSIONS[cid][:pid] = wait.pid if SESSIONS[cid]
         stdin.close

@@ -1,2 +1,4 @@
 /dev/
 .env.local
+AGENTS.md
+**/.knowledge/
