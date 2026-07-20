@@ -35,9 +35,6 @@ RUN set -eux; \
 RUN docker -v
 
 COPY --from=base /usr/local/bundle /usr/local/bundle
-COPY --from=base /usr/lib/x86_64-linux-gnu/libuv.so.1 /usr/lib/x86_64-linux-gnu/libuv.so.1
-# E: lws_create_context: unable to load evlib plugin evlib_uv
-# E: libwebsockets context creation failed
 COPY --from=base /ttyd/build/ttyd /usr/local/bin
 # RUN ttyd -p 8000 bash
 

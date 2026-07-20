@@ -4,6 +4,9 @@ services:
     build:
       context: ../src
       dockerfile: ../docker/ruby/Dockerfile
+      platforms:
+        - linux/amd64
+        - linux/arm64
       cache_from:
         - type=gha,scope=stack-insight
       cache_to:
