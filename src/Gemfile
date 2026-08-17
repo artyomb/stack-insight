@@ -21,5 +21,6 @@ gem 'stack-service-base'#
 # gem 'opentelemetry-instrumentation-all'
 
 group :development do
+  gem 'minitest'
   gem 'rubocop'
 end

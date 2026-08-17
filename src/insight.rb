@@ -48,6 +48,30 @@ class ServerInsight < Sinatra::Base
         end
       end
     end
+
+    def tempo_search(container_id, query)
+      command = [
+        'docker', 'exec', container_id, 'curl',
+        '--silent', '--show-error', '--fail', '--get',
+        '--connect-timeout', ENV.fetch('TEMPO_CONNECT_TIMEOUT', '2'),
+        '--max-time', ENV.fetch('TEMPO_SEARCH_TIMEOUT', '5')
+      ]
+      query.each { |key, value| command.concat ['--data-urlencode', "#{key}=#{value}"] }
+      command << 'http://tempo:3200/api/search'
+
+      stdout, stderr, status = Open3.capture3(*command)
+      unless status.success?
+        detail = stderr.strip
+        detail = stdout.strip if detail.empty?
+        raise "request exited with status #{status.exitstatus}: #{detail.slice(0, 200)}"
+      end
+
+      JSON(stdout, symbolize_names: true)
+    rescue StandardError => e
+      @tempo_search_error = 'Tempo search is unavailable; exception data was omitted.'
+      LOGGER.warn "Tempo search failed (#{e.class}): #{e.message}"
+      {}
+    end
   end
 
   get '/stack2*', &-> { slim :stack }

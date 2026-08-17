@@ -58,6 +58,7 @@ GEM
       irb (~> 1.10)
       reline (>= 0.3.8)
     dotenv (3.2.0)
+    drb (2.2.3)
     ed25519 (1.4.0)
     erb (6.0.1)
     falcon (0.53.1)
@@ -102,6 +103,9 @@ GEM
       msgpack
     memory-leak (0.7.0)
     metrics (0.15.0)
+    minitest (6.0.6)
+      drb (~> 2.0)
+      prism (~> 1.5)
     msgpack (1.8.0)
     multi_json (1.19.1)
     mustermann (3.0.4)
@@ -428,6 +432,7 @@ DEPENDENCIES
   async-io
   async-websocket
   falcon
+  minitest
   rack
   rackup
   rubocop

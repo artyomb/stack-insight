@@ -15,12 +15,7 @@ ruby:
             q: %[{ resource.deployment.environment="#{params[:stack]}" && event:name = "exception" } | select( kind, status, resource.service.name, event.exception.message ) ],
             start: (Time.now - _range).to_i, end: Time.now.to_i, limit: 1000, spss: 100
     }
-    traces = `docker exec #{con['Id']} curl -G -s  http://tempo:3200/api/search  #{ query.map { |k,v| "--data-urlencode '#{k}=#{v}' " }.join ' ' } 2>&1`
-    begin
-      traces_ = JSON traces, symbolize_names: true
-    rescue
-      halt traces
-    end
+    traces_ = tempo_search(con['Id'], query)
     traces_[:traces]&.each do |t|
       t[:spanSet][:spans]&.each do |s|
         s[:attributes] = s[:attributes].map{ [_1[:key], _1[:value][:stringValue] ]}.to_h
@@ -42,6 +37,9 @@ h2 class=( service_errors.size > 0 ? 'has_errors' : nil)
   | Exceptions
   span.time.ago =(Time.now  - _range).utc
 
+- if @tempo_search_error
+  p.warning = @tempo_search_error
+
 / pre#traces = JSON.pretty_generate(service_errors)
 table
   tr
@@ -60,4 +58,3 @@ table
       td.time = Time.at(s[:startTimeUnixNano].to_i / 1_000_000_000).utc
       td = "#{s[:durationNanos].to_i / 1_000_000_000.0}s"
       td = s[:spanID]
-

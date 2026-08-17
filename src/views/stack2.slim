@@ -11,8 +11,7 @@ ruby:
       if con
         query = { q: %[{ resource.deployment.environment="#{params[:stack]}" && event:name = "exception" } | select( kind, status, resource.service.name, event.exception.message ) ],
                   start: (Time.now - _range).to_i, end: Time.now.to_i, limit: 1000, spss: 100 }
-        traces = `docker exec #{con['Id']} curl -G -s  http://tempo:3200/api/search  #{ query.map { |k, v| "--data-urlencode '#{k}=#{v}' " }.join ' ' } 2>&1`
-        traces_ = JSON traces, symbolize_names: true rescue traces
+        traces_ = tempo_search(con['Id'], query)
         traces_[:traces]&.each do |t|
           t[:spanSet][:spans]&.each do |s|
             s[:attributes] = s[:attributes].map { [_1[:key], _1[:value][:stringValue]] }.to_h
@@ -200,6 +199,8 @@ ruby:
   }.map(&:wait)
 
 h1 Stack: #{params[:stack]}
+- if @tempo_search_error
+  p.warning = @tempo_search_error
 pre.description = description
 
 pre: table
@@ -226,4 +227,3 @@ pre: table
         a.action href="logs/?service=#{s['Name']}" title="Logs" L
         a.action href="update/?service=#{s['Name']}" onclick="return confirm('Are you sure to Pull and Update \n#{s['Name']}?')" title="Update" U
         a.action href="restart/?service=#{s['Name']}" onclick="return confirm('Are you sure to Force update \n#{s['Name']}?')" title="Force update" R
-
