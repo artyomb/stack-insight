@@ -209,6 +209,7 @@ class ServerTtyd < Sinatra::Base
   end
 
   get '/ttyd/:cid/ws' do
+    client = ttyd = nil
     session = start_session(params[:cid])
     return unless Async::WebSocket::Adapters::Rack.websocket?(env)
 
