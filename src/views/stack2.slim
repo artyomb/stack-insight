@@ -199,6 +199,7 @@ ruby:
   }.map(&:wait)
 
 h1 Stack: #{params[:stack]}
+== slim :deploy_sources, locals: { services: services }
 - if @tempo_search_error
   p.warning = @tempo_search_error
 pre.description = description
