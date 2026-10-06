@@ -1,0 +1,14 @@
+ruby:
+  deploy_sources = services.filter_map { _1.dig('Spec', 'Labels', 'dry-stack.deploy.source') }.uniq
+  deploy_sources.reject! { _1.strip.empty? }
+
+- unless deploy_sources.empty?
+  .deploy-sources
+    strong Deploy source
+    ul
+      - deploy_sources.each do |source|
+        li
+          - if source.match?(/\Ahttps?:\/\//i)
+            a href=source = source
+          - else
+            = source
