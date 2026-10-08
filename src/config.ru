@@ -1,18 +1,21 @@
 #!/usr/bin/env ruby
-puts "RubyVM::YJIT: #{RubyVM::YJIT.enabled?}"
 if defined?(RubyVM::YJIT) && RubyVM::YJIT.respond_to?(:enable)
   RubyVM::YJIT.enable
+  puts "RubyVM::YJIT: #{RubyVM::YJIT.enabled?}"
 else
   puts 'YJIT is not enabled'
 end
-puts "RubyVM::YJIT: #{RubyVM::YJIT.enabled?}"
 
 require 'async'
 require 'stack-service-base'
 require 'stack-service-base/prometheus_parser'
+require_relative 'insight_auth'
 
 require_relative 'ttyd'
 require_relative 'insight'
+
+auth_options = InsightAuth.options
+use InsightAuth, **auth_options if auth_options
 
 StackServiceBase.rack_setup self
 

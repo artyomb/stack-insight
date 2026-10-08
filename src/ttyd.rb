@@ -158,7 +158,7 @@ class ServerTtyd < Sinatra::Base
                 else
                   ['docker', 'exec', '-it', session[:cid], shell]
                 end
-      ['ttyd', '-p', session[:port].to_s, '-W', '--exit-no-conn', *command]
+      ['ttyd', '-i', 'lo', '-p', session[:port].to_s, '-W', '--exit-no-conn', *command]
     end
 
     def run_ttyd(session, shell)
