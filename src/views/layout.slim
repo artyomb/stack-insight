@@ -140,7 +140,7 @@ html
             remaining %= sec;
             if (val === 0) return acc;
             if (sec === 60 && diffSeconds >= 86400) return acc;
-            if (sec === 1 && diffSeconds >= 86400) return acc;
+            if (sec === 1 && diffSeconds >= 3600) return acc;
             return acc + val + unit + ' ';
           }, '').trim();
 

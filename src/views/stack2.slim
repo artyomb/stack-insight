@@ -84,7 +84,8 @@ ruby:
 
   service_errors = service_errors.wait
 
-  columns = %w[NameT Image Image\ Age Version Commit Replicas CurrentState RPS ESpans Container\ Size Running]
+  columns = %w[NameT Image Image\ Age Version Commit Replicas CurrentState ESpans Container\ Size Running]
+  column_titles = { 'CurrentState' => 'State', 'Container Size' => 'Size' }
   services.map { |s|
     Async do
       spec = s['Spec']
@@ -198,6 +199,8 @@ ruby:
     end
   }.map(&:wait)
 
+  columns.delete('ESpans') unless services.any? { _1['ESpans'].to_i > 0 }
+
 h1 Stack: #{params[:stack]}
 == slim :deploy_sources, locals: { services: services }
 - if @tempo_search_error
@@ -206,7 +209,7 @@ pre.description = description
 
 pre: table
   - columns.each do |k|
-    th = k
+    th title=k = column_titles.fetch(k, k)
   th Actions
   - services.each do |s|
     tr class=s['Klass']

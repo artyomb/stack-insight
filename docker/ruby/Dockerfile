@@ -1,4 +1,4 @@
-FROM ruby:3.4.4-slim-bookworm AS base
+FROM ruby:3.4.12-slim-bookworm AS base
 
 RUN apt update && apt --fix-missing install -y build-essential pkg-config bash curl libpq-dev openssh-client libyaml-dev\
      libpq-dev libsqlite3-dev libssl-dev libgeos-dev docker.io jq cmake libjson-c-dev libwebsockets-dev\
@@ -16,7 +16,7 @@ COPY Gemfile* /app/
 RUN bundle install --jobs $(nproc) --retry=3 && \
     bundle clean --force && rm -rf /usr/local/bundle/cache/*
 
-FROM ruby:3.4.4-slim-bookworm AS deploy
+FROM ruby:3.4.12-slim-bookworm AS deploy
 RUN apt update && apt install --fix-missing -y bash curl libpq-dev openssh-client libyaml-0-2 procps\
       libssl-dev jq libjson-c5 libwebsockets-dev \
      && rm -rf /var/lib/apt/lists/*
