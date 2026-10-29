@@ -1,5 +1,7 @@
 ruby:
   @dinfo = @dinfo.wait if @dinfo.class == Async::Task
+  public_path = request.env['HTTP_X_FORWARDED_URI'] || request.env['REQUEST_URI'] || request.path
+  base_path = public_path.split('?', 2).first[%r{\A.*/insight(?=/|\z)}].to_s
 
 doctype html
 html
@@ -9,7 +11,7 @@ html
     title = @dinfo['Name']
     meta[name="viewport" content="width=device-width, initial-scale=1.0"]
     / link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700&display=swap" rel="stylesheet"
-    link href="/fonts/jet_brains_mono.css" rel="stylesheet"
+    link href="#{base_path}/fonts/jet_brains_mono.css" rel="stylesheet"
     sass:
       h1
         font-size: 1.6em
@@ -103,13 +105,6 @@ html
       const BASE_PATH = window.location.pathname.match(/(.*insight)/)?.[1] || '';
       const home = document.querySelector('a.home-link');
       home.href = BASE_PATH + '/';
-
-      const link_list = document.querySelectorAll('head link');
-      link_list.forEach(function (l) {
-        if (l.getAttribute('rel') === "stylesheet") {
-          l.href = BASE_PATH  + l.getAttribute('href');
-        }
-      });
 
     == yield
 

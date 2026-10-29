@@ -3,7 +3,7 @@
   font-style: italic;
   font-weight: 100 800;
   font-display: swap;
-  src: url(/fonts/JetBrainsMono-Italic[wght].ttf) format('woff2');
+  src: url('JetBrainsMono-Italic[wght].ttf') format('truetype');
 }
 
 @font-face {
@@ -11,6 +11,6 @@
   font-style: normal;
   font-weight: 100 800;
   font-display: swap;
-  src: url(/fonts/JetBrainsMono[wght].ttf) format('woff2');
+  src: url('JetBrainsMono[wght].ttf') format('truetype');
 }
 
