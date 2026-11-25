@@ -5,6 +5,8 @@ require 'async/http/endpoint'
 require 'net/http'
 require 'uri'
 require 'open3'
+require 'json'
+require 'shellwords'
 
 class ServerInsight < Sinatra::Base
   before do
@@ -14,6 +16,57 @@ class ServerInsight < Sinatra::Base
   end
 
   helpers do()
+    def inspect_tag_image(id)
+      stdout, _, status = Open3.capture3('docker', 'image', 'inspect', id)
+      JSON.parse(stdout).first if status.success?
+    end
+
+    def tag_image_row(task, container, images)
+      reference = task.fetch('Image')
+      name, pinned_digest = reference.split('@', 2)
+      row = { Name: task['Name'], Image: reference }
+      return row unless name.match?(%r{\A[^/]+\.[^/]+/})
+
+      repository = row[:Repository] = name.sub(%r{:[^/:]+\z}, '')
+      id = container&.[]('Image')
+      image = images.fetch(id) { images[id] = inspect_tag_image(id) } if id
+      unless image
+        row[:Unavailable] = 'Local image unavailable'
+        return row
+      end
+
+      row[:Digests] = Array(image['RepoDigests']).filter_map do |entry|
+        repo, digest = entry.split('@', 2)
+        next unless repo == repository && /\Asha256:[0-9a-f]{64}\z/.match?(digest)
+        digest if pinned_digest.nil? || digest == pinned_digest
+      end
+      row[:Unavailable] = 'No matching repository digest' if row[:Digests].empty?
+      row[:Tags] = Array(image['RepoTags']).filter_map do |entry|
+        repo, _, tag = entry.rpartition(':')
+        tag if repo == repository
+      end
+      row[:Version] = image.dig('Config', 'Labels', 'org.opencontainers.image.version')
+      row[:Created] = image['Created']
+      row
+    end
+
+    def publish_image_tag(row, target_tag)
+      if row[:Unavailable]
+        return { error: true, output: "Skipped #{row[:Name]}: #{row[:Unavailable]}" }
+      end
+
+      source = "#{row[:Repository]}@#{row[:Digests].first}"
+      target = "#{row[:Repository]}:#{target_tag}"
+      output = +""
+      [['pull', source], ['tag', source, target], ['push', target]].each do |args|
+        output << "# docker #{args.shelljoin}\n"
+        message, status = Open3.capture2e('docker', *args)
+        output << message
+        return { error: true, output: output } unless status.success?
+      end
+      { output: output }
+    end
+
     def favicon(dinfo)
       name = dinfo['Name'].split(/\.|_|-/).map { |s| s.capitalize.chars.first }.slice(0..1).join
       <<~SVG

@@ -1,55 +1,24 @@
 ruby:
-  $container_images_cache ||= {}
+  images = {}
   target_tag = params[:tag]
+  stack = Shellwords.escape(params[:stack].to_s)
 
-  ps = Async { JSON `docker ps #{@calc_size} --filter "label=com.docker.stack.namespace=#{params[:stack]}" --format '{{.ID}}' | xargs -r docker inspect #{@calc_size_inspect} 2>&1 | jq -s ` }
-  sps = Async { JSON `docker stack ps #{params[:stack]} --no-trunc --format "{{json .}}" | jq --arg stack "{}" '. + {Stack: $stack}' | jq -s . 2>&1` }
+  ps = Async { JSON `docker ps #{@calc_size} --filter label=com.docker.stack.namespace=#{stack} --format '{{.ID}}' | xargs -r docker inspect #{@calc_size_inspect} 2>&1 | jq -s` }
+  sps = Async { JSON `docker stack ps #{stack} --no-trunc --format "{{json .}}" | jq -s .` }
 
-  ps = ps.wait.first&.group_by { _1.dig 'Config', 'Labels', 'com.docker.swarm.task.id' }&.transform_values(&:first) || {}
-  sps = sps.wait.group_by { _1['Name'] }
-
-  tag_list = sps.map { |s_name, s|
-    svc = s.first
-    next unless svc
-
-    image_domain = svc['Image'].match(/^(?:(?<domain>[^\/]+\.[^\/]+(?::\d+)?)[\/])?(?<name>.+)$/)[1]
-
-    if image_domain
-      con = ps[svc['ID']] rescue 'n/a' # First replica, running task container
-      if con
-        image = $container_images_cache[con['Image']] ||= JSON(`docker image inspect #{con['Image']}`)[0]
-        c_digests = image['RepoDigests'].map{ _1[/sha256:.{64}/] }
-        c_tags = image['RepoTags'].map { _1.split(':').last }
-        version = image.dig( 'Config', 'Labels', 'org.opencontainers.image.version')
-        created = image['Created']
-      end
-    end
-
-    { Name: svc['Name'], ImageDomain: image_domain, Image: svc['Image'], Digests: c_digests, Tags: c_tags, Version: version, Created: created }
-  }
-
-  tag_list = tag_list.select { _1[:ImageDomain] } + tag_list.reject { _1[:ImageDomain] }
-  columns = tag_list.first.keys - [:ImageDomain]
+  containers = Array(ps.wait.first).to_h { |c| [c.dig('Config', 'Labels', 'com.docker.swarm.task.id'), c] }
+  tasks = sps.wait.uniq { |task| task['Name'] }
+  tag_list = tasks.map { |task| tag_image_row(task, containers[task['ID']], images) }
+  tag_list = tag_list.partition { |row| row[:Repository] }.flatten(1)
+  columns = %i[Name Image Digests Tags Version Created]
 
   if request.post?
-    $container_images_cache = {}
-    outputs = tag_list.select { _1[:ImageDomain] && params[:services].to_a.include?(_1[:Name])}.map do |t|
-    Async do
-        o = ''
-        image = "#{t[:Image].split(':').first}@#{t[:Digests].first}"
-        t_image = "#{t[:Image].split(':').first}:#{target_tag}"
-        exe = ->(cmd) {
-          o += "# #{cmd}\n"
-          o += `#{cmd} 2>&1 | tee `
-        }
-        exe.call "docker pull #{image}"
-        exe.call "docker tag #{image} #{t_image}"
-        exe.call "docker push #{t_image} "
-        { output: o, image: , t_image: }
-      rescue
-        { output: o, image: , t_image:, error: "Error: #{$!.message}\n"}
-      end
+    selected = Array(params[:services])
+    outputs = tag_list.filter_map do |row|
+      next unless row[:Repository] && selected.include?(row[:Name])
+      Async { publish_image_tag(row, target_tag) }
     end.map(&:wait)
+    $container_images_cache = {}
   end
 
 sass:
@@ -80,15 +49,11 @@ div target_tag: #{params[:tag]}
       - columns.each do |k|
         th = k
       - tag_list.each do |t|
-        tr class=t['Klass']
+        tr
           td
-            - unless t[:ImageDomain].nil?
-              input type='checkbox' name='services[]' value=t[:Name] checked=t[:Tags].to_a.include?(target_tag)
+            - if t[:Unavailable]
+              span = t[:Unavailable]
+            - elsif t[:Repository]
+              input type='checkbox' name='services[]' value=t[:Name] checked=t[:Tags].include?(target_tag)
           - columns.each do |c|
-            -classes = [c.downcase]
-            -classes << 'skip' if t[:ImageDomain].nil?
-            td class=classes title=t["Title#{c}"]
-              - if t["Link#{c}"]
-                a href=s["Link#{c}"] == s[c]
-              - else
-                == t[c]
+            td class=[c.downcase, ('skip' unless t[:Repository])] = t[c]
